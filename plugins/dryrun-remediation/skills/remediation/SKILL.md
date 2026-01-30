@@ -1,5 +1,6 @@
 ---
 name: remediation
+version: 1.0.0
 description: Help fix security vulnerabilities identified by DryRunSecurity. Use when the user shares a DryRunSecurity PR comment or asks for help fixing any security finding. Research authoritative sources and apply fixes grounded in the user's specific codebase context.
 ---
 

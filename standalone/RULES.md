@@ -1,4 +1,6 @@
 # DryRunSecurity Vulnerability Remediation
+# Version: 1.0.0
+# https://github.com/DryRunSecurity/external-plugin-marketplace
 
 When helping fix security vulnerabilities identified by DryRunSecurity, follow this process to provide fixes that are grounded in authoritative sources and contextually relevant to the user's specific codebase.
 
