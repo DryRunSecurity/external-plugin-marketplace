@@ -5,6 +5,19 @@ All notable changes to DryRunSecurity Skills will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2025-01-30
+
+### Added
+- **DryRunSecurity finding format parsing**: Step 1 now includes the exact format of DryRunSecurity PR comments, showing how to extract:
+  - Vulnerability type from the markdown table
+  - File path from the `<code>` tag
+  - Line numbers from the GitHub permalink
+  - Severity indicators (`:yellow_circle:` vs blocking)
+- Example parsing walkthrough for Prompt Injection finding
+
+### Improved
+- More precise guidance on what information to extract from each part of the finding
+
 ## [1.1.0] - 2025-01-30
 
 ### Changed
@@ -41,5 +54,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Command Injection, Prompt Injection, Race Conditions
 - And more
 
+[1.2.0]: https://github.com/DryRunSecurity/external-plugin-marketplace/releases/tag/v1.2.0
 [1.1.0]: https://github.com/DryRunSecurity/external-plugin-marketplace/releases/tag/v1.1.0
 [1.0.0]: https://github.com/DryRunSecurity/external-plugin-marketplace/releases/tag/v1.0.0

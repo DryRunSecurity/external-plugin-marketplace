@@ -1,6 +1,6 @@
 ---
 name: remediation
-version: 1.1.0
+version: 1.2.0
 description: Help fix security vulnerabilities identified by DryRunSecurity. Use when the user shares a DryRunSecurity PR comment or asks for help fixing any security finding. Research authoritative sources and apply fixes grounded in the user's specific codebase context.
 ---
 
@@ -16,13 +16,41 @@ You are helping a developer fix a security vulnerability identified by DryRunSec
 
 ### Step 1: Parse the DryRunSecurity Finding
 
-Extract from the finding:
-- **Vulnerability type** (e.g., SQL Injection, XSS, SSRF, IDOR, Race Condition, Prompt Injection)
-- **Affected file(s) and line numbers**
-- **The specific dangerous pattern** DryRunSecurity identified
-- **Language and framework** involved
+DryRunSecurity findings follow this format:
 
-If any of this is unclear, ask the user to share the full DryRunSecurity comment.
+```
+<summary paragraph describing what the PR introduces>
+
+<details>
+<summary>
+[emoji] Vulnerability Title in <code>path/to/file.ext</code>
+</summary>
+
+| **Vulnerability** | Vulnerability Name |
+|:---|:---|
+| **Description** | Detailed explanation... |
+
+<GitHub permalink to affected lines>
+</details>
+```
+
+Extract these key elements:
+- **Vulnerability type**: From the table row (e.g., "Prompt Injection", "Cross-Site Scripting", "Missing Authorization Check")
+- **File path**: From the `<code>` tag in the summary line
+- **Line numbers**: From the GitHub permalink (e.g., `#L231-L232` means lines 231-232)
+- **Description**: The detailed explanation of WHY this is vulnerable and the attack scenario
+- **Severity indicator**: `:yellow_circle:` means "needs extra attention", no emoji typically means blocking issue
+
+**Example parsing:**
+```
+Summary: "Prompt Injection in <code>openhands/.../file_ops.py</code>"
+→ Vulnerability: Prompt Injection
+→ File: openhands/runtime/plugins/agent_skills/file_ops/file_ops.py
+→ Lines: 231-232 (from permalink)
+→ Issue: User input concatenated directly into LLM prompt without sanitization
+```
+
+If the user only shares part of the finding, ask for the full DryRunSecurity comment to get all details.
 
 ### Step 2: Gather Codebase Context
 

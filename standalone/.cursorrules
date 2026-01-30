@@ -1,5 +1,5 @@
 # DryRunSecurity Vulnerability Remediation
-# Version: 1.1.0
+# Version: 1.2.0
 # https://github.com/DryRunSecurity/external-plugin-marketplace
 
 When helping fix security vulnerabilities identified by DryRunSecurity, follow this process to provide fixes grounded in authoritative sources and contextually relevant to the user's codebase.
@@ -7,11 +7,26 @@ When helping fix security vulnerabilities identified by DryRunSecurity, follow t
 ## Process
 
 ### 1. Parse the Finding
-Extract from the DryRunSecurity comment:
-- Vulnerability type (SQL Injection, XSS, SSRF, IDOR, Race Condition, etc.)
-- Affected file(s) and line numbers
-- The specific dangerous pattern identified
-- Language and framework involved
+
+DryRunSecurity findings follow this format:
+```
+<details>
+<summary>[emoji] Vulnerability Title in <code>path/to/file.ext</code></summary>
+
+| **Vulnerability** | Vulnerability Name |
+|:---|:---|
+| **Description** | Detailed explanation... |
+
+<GitHub permalink to affected lines>
+</details>
+```
+
+Extract:
+- **Vulnerability type**: From table row (e.g., "Prompt Injection", "Cross-Site Scripting")
+- **File path**: From the `<code>` tag in summary
+- **Line numbers**: From GitHub permalink (e.g., `#L231-L232`)
+- **Description**: The WHY - attack scenario and what makes it vulnerable
+- **Severity**: `:yellow_circle:` = needs attention, no emoji = blocking
 
 ### 2. Gather Codebase Context
 
