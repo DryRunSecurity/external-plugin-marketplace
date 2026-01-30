@@ -31,6 +31,22 @@ Helps fix security vulnerabilities including:
 
 ## Installation
 
+### For Cursor
+
+Copy the contents of [`standalone/.cursorrules`](standalone/.cursorrules) to your project's `.cursorrules` file, or download it directly:
+
+```bash
+curl -o .cursorrules https://raw.githubusercontent.com/DryRunSecurity/external-plugin-marketplace/main/standalone/.cursorrules
+```
+
+### For Windsurf
+
+Copy the contents of [`standalone/.windsurfrules`](standalone/.windsurfrules) to your project's `.windsurfrules` file, or download it directly:
+
+```bash
+curl -o .windsurfrules https://raw.githubusercontent.com/DryRunSecurity/external-plugin-marketplace/main/standalone/.windsurfrules
+```
+
 ### For Claude Code
 
 ```bash
@@ -41,9 +57,9 @@ Helps fix security vulnerabilities including:
 /plugin install dryrun-remediation@dryrunsecurity
 ```
 
-### For Other AI Assistants
+### For Other AI Assistants (VS Code, Codex, etc.)
 
-Refer to your assistant's documentation for adding custom skills.
+Copy the contents of [`standalone/RULES.md`](standalone/RULES.md) into your AI assistant's system prompt or rules configuration.
 
 ## Usage
 
@@ -82,14 +98,18 @@ The assistant will identify the vulnerable pattern and provide the parameterized
 ```
 external-plugin-marketplace/
 ├── .claude-plugin/
-│   └── marketplace.json
+│   └── marketplace.json           # Claude Code marketplace config
 ├── plugins/
 │   └── dryrun-remediation/
 │       ├── .claude-plugin/
-│       │   └── plugin.json
+│       │   └── plugin.json        # Claude Code plugin manifest
 │       └── skills/
 │           └── remediation/
-│               └── SKILL.md
+│               └── SKILL.md       # Full skill for Claude Code
+├── standalone/
+│   ├── .cursorrules               # For Cursor IDE
+│   ├── .windsurfrules             # For Windsurf IDE
+│   └── RULES.md                   # Generic (VS Code, Codex, etc.)
 └── README.md
 ```
 
