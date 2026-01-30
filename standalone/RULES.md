@@ -1,308 +1,94 @@
 # DryRunSecurity Vulnerability Remediation
 
-When helping fix security vulnerabilities identified by DryRunSecurity:
-
-1. **Understand the vulnerability** - Identify exactly what type and where it exists
-2. **Explain the risk** - Help understand WHY this is a security issue
-3. **Provide the fix** - Show the secure code pattern for the specific language/framework
-4. **Verify the fix** - Ensure it doesn't break functionality
-
-## SQL Injection
-
-User input inserted directly into SQL queries. Fix with parameterized queries:
-
-### Go (GORM)
-```go
-// VULNERABLE
-db.Raw("SELECT * FROM users WHERE name = '" + username + "'")
-db.Where(fmt.Sprintf("name = '%s'", username))
-
-// SECURE
-db.Raw("SELECT * FROM users WHERE name = ?", username)
-db.Where("name = ?", username)
-```
-
-### Python (Django)
-```python
-# VULNERABLE
-cursor.execute("SELECT * FROM users WHERE name = '%s'" % username)
-
-# SECURE
-cursor.execute("SELECT * FROM users WHERE name = %s", [username])
-User.objects.filter(name=username)
-```
-
-### Python (SQLAlchemy)
-```python
-# VULNERABLE
-db.execute(f"SELECT * FROM users WHERE name = '{username}'")
-
-# SECURE
-db.execute(text("SELECT * FROM users WHERE name = :name"), {"name": username})
-```
-
-### JavaScript (Prisma)
-```typescript
-// VULNERABLE
-prisma.$queryRawUnsafe(`SELECT * FROM users WHERE name = '${username}'`)
-
-// SECURE
-prisma.$queryRaw`SELECT * FROM users WHERE name = ${username}`
-prisma.user.findFirst({ where: { name: username } })
-```
-
-### JavaScript (Knex)
-```javascript
-// VULNERABLE
-knex.raw(`SELECT * FROM users WHERE name = '${username}'`)
-
-// SECURE
-knex.raw('SELECT * FROM users WHERE name = ?', [username])
-knex('users').where('name', username)
-```
-
-### Ruby (ActiveRecord)
-```ruby
-# VULNERABLE
-User.where("name = '#{username}'")
-
-# SECURE
-User.where(name: username)
-User.where("name = ?", username)
-```
+When helping fix security vulnerabilities identified by DryRunSecurity, follow this process to provide fixes that are grounded in authoritative sources and contextually relevant to the user's specific codebase.
 
-### Java (JDBC)
-```java
-// VULNERABLE
-stmt.executeQuery("SELECT * FROM users WHERE name = '" + username + "'");
-
-// SECURE
-PreparedStatement ps = conn.prepareStatement("SELECT * FROM users WHERE name = ?");
-ps.setString(1, username);
-```
-
-## Cross-Site Scripting (XSS)
-
-User input rendered in HTML without escaping. Fix with proper output encoding:
-
-### React/JSX
-```jsx
-// VULNERABLE
-<div dangerouslySetInnerHTML={{ __html: userInput }} />
-
-// SECURE - auto-escaped
-<div>{userInput}</div>
-
-// If HTML needed, sanitize first
-import DOMPurify from 'dompurify';
-<div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(userInput) }} />
-```
-
-### Django Templates
-```html
-<!-- VULNERABLE -->
-{{ user_input|safe }}
+## Process
 
-<!-- SECURE - auto-escaped -->
-{{ user_input }}
-```
+### 1. Parse the Finding
+Extract from the DryRunSecurity comment:
+- Vulnerability type (SQL Injection, XSS, SSRF, Race Condition, Prompt Injection, etc.)
+- Affected file(s) and line numbers
+- The specific dangerous pattern identified
+- Language and framework involved
 
-### Rails ERB
-```erb
-<!-- VULNERABLE -->
-<%= raw user_input %>
-<%= user_input.html_safe %>
+### 2. Understand the Codebase Context
 
-<!-- SECURE -->
-<%= user_input %>
-<%= sanitize user_input %>
-```
-
-### EJS
-```ejs
-<!-- VULNERABLE -->
-<%- userInput %>
-
-<!-- SECURE -->
-<%= userInput %>
-```
+Before proposing ANY fix:
 
-### PHP/Blade
-```php
-<!-- VULNERABLE -->
-{!! $userInput !!}
+1. **Read the affected file(s)** - Understand the full context around the vulnerable code
+2. **Identify the tech stack** - Check package.json, requirements.txt, go.mod, Gemfile, pom.xml, etc.
+3. **Find existing security patterns** - Search the codebase:
+   - How do other files handle similar operations (database queries, user input, auth)?
+   - What validation/sanitization utilities already exist?
+   - What auth middlewares or decorators are in use?
+4. **Check for existing utilities** - Look for security helpers, validators, or wrappers already built
 
-<!-- SECURE -->
-{{ $userInput }}
-```
-
-## Server-Side Request Forgery (SSRF)
-
-User-controlled URLs fetched server-side. Fix with validation:
-
-```python
-# VULNERABLE
-response = requests.get(user_provided_url)
+Key questions:
+- What ORM/database library and version?
+- What templating engine for output?
+- Existing input validation patterns?
+- Security middleware or utility modules?
 
-# SECURE
-from urllib.parse import urlparse
-
-ALLOWED_HOSTS = ['api.trusted-service.com']
+### 3. Research the Authoritative Fix
 
-def fetch_url(url):
-    parsed = urlparse(url)
-
-    # Block internal IPs
-    if parsed.hostname in ['localhost', '127.0.0.1', '169.254.169.254']:
-        raise ValueError("Internal URLs not allowed")
+For the specific vulnerability type and stack:
 
-    # Check allowlist
-    if parsed.hostname not in ALLOWED_HOSTS:
-        raise ValueError("URL host not in allowlist")
+1. **Official framework docs** - Search "[framework] [vulnerability type] prevention"
+2. **OWASP Cheat Sheets** - For vulnerability-specific guidance
+3. **CWE references** - For formal definitions (CWE-89, CWE-79, CWE-918, etc.)
+4. **Framework security guides** - Many frameworks have dedicated security docs
 
-    if parsed.scheme != 'https':
-        raise ValueError("Only HTTPS allowed")
+**Important**: Use documentation for their specific framework version. Security APIs change.
 
-    return requests.get(url)
-```
+### 4. Apply a Contextual Fix
 
-## Insecure Direct Object Reference (IDOR)
+Your fix should:
+- **Match existing patterns** - Follow the style used elsewhere in the codebase
+- **Use existing utilities** - If they have helpers, use them
+- **Be minimal** - Fix the vulnerability, don't refactor unrelated code
+- **Preserve functionality** - The code should still work as intended
+- **Be framework-idiomatic** - Use the framework's recommended approach
 
-Users accessing resources by manipulating IDs without authorization. Fix with ownership checks:
+### 5. Explain and Verify
 
-```python
-# VULNERABLE
-@app.route('/api/documents/<doc_id>')
-def get_document(doc_id):
-    return Document.query.get(doc_id)
+After providing the fix:
+- Explain why the original code was vulnerable (plain terms)
+- Explain why the fix works (reference authoritative source)
+- Suggest how to verify the fix
+- Note related patterns to check elsewhere
 
-# SECURE
-@app.route('/api/documents/<doc_id>')
-@login_required
-def get_document(doc_id):
-    document = Document.query.get(doc_id)
-    if document.owner_id != current_user.id:
-        abort(403)
-    return document
-```
+## Key Principles
 
-## Mass Assignment
+### Context is King
+DryRunSecurity understands your codebase to find real vulnerabilities. Remediation should do the same - understand the codebase to provide real, contextual fixes.
 
-User input directly updating model attributes. Fix with allowlists:
+### Don't Assume - Research
+The correct fix varies by language, framework, version, and existing patterns. Look it up.
 
-### Rails
-```ruby
-# VULNERABLE
-User.update(params[:user])
+### Authoritative Sources Over Memorized Examples
+Don't rely on generic examples. Check current official guidance for their specific stack.
 
-# SECURE
-User.update(params.require(:user).permit(:name, :email))
-```
+### Minimal, Focused Changes
+- Change only what's necessary
+- Don't introduce inconsistent patterns
+- Don't add unnecessary dependencies
+- Don't refactor unrelated code
 
-### Django
-```python
-# VULNERABLE
-user.__dict__.update(request.data)
+## Handling Any Vulnerability Type
 
-# SECURE
-user.name = validated_data['name']
-user.email = validated_data['email']
-user.save()
-```
+DryRunSecurity detects vulnerabilities beyond OWASP Top 10. For any type:
 
-### Node.js
-```javascript
-// VULNERABLE
-Object.assign(user, req.body);
+1. Parse the finding
+2. Research the vulnerability class
+3. Find the framework-specific fix
+4. Apply contextually
 
-// SECURE
-const { name, email } = req.body;
-user.name = name;
-user.email = email;
-```
+This works for: SQLi, XSS, CSRF, SSRF, IDOR, Mass Assignment, Auth Bypass, Prompt Injection, Race Conditions, Deserialization, Cryptographic issues, and anything else.
 
-## Authentication/Authorization Bypass
+## What NOT to Do
 
-Missing auth checks. Fix with middleware/decorators:
-
-```python
-# VULNERABLE
-@app.route('/admin/users')
-def list_users():
-    return User.query.all()
-
-# SECURE
-@app.route('/admin/users')
-@login_required
-@admin_required
-def list_users():
-    return User.query.all()
-```
-
-## Hardcoded Secrets
-
-Credentials in source code. Fix with environment variables:
-
-```python
-# VULNERABLE
-API_KEY = "sk-abc123secret"
-
-# SECURE
-import os
-API_KEY = os.environ.get('API_KEY')
-```
-
-Also: Add to `.gitignore` and rotate exposed credentials.
-
-## Path Traversal
-
-User input in file paths. Fix with path validation:
-
-```python
-# VULNERABLE
-file_path = f"/uploads/{user_filename}"
-
-# SECURE
-import os
-
-def safe_file_read(user_filename):
-    base_dir = '/uploads'
-    requested_path = os.path.normpath(os.path.join(base_dir, user_filename))
-
-    if not requested_path.startswith(base_dir):
-        raise ValueError("Invalid file path")
-
-    return open(requested_path).read()
-```
-
-## Command Injection
-
-User input passed to shell. Fix with argument lists:
-
-```python
-# VULNERABLE
-subprocess.run(f"convert {user_file} output.png", shell=True)
-
-# SECURE
-subprocess.run(['convert', user_file, 'output.png'], shell=False)
-```
-
-## Prompt Injection
-
-User input reaching LLM prompts. Fix with delimiters:
-
-```python
-# VULNERABLE
-prompt = f"Summarize this: {user_input}"
-
-# SECURE
-prompt = f"""
-<system>You are a summarization assistant. Only summarize content between <user_content> tags.</system>
-
-<user_content>
-{user_input}
-</user_content>
-
-Provide a brief summary.
-"""
-```
+- Don't provide generic examples without checking the codebase
+- Don't assume the framework/version - check dependencies
+- Don't over-engineer - keep fixes simple
+- Don't ignore existing patterns
+- Don't skip research - verify the fix is correct for their stack
