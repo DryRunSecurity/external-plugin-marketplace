@@ -1,6 +1,6 @@
 ---
 name: remediation
-version: 1.0.0
+version: 1.1.0
 description: Help fix security vulnerabilities identified by DryRunSecurity. Use when the user shares a DryRunSecurity PR comment or asks for help fixing any security finding. Research authoritative sources and apply fixes grounded in the user's specific codebase context.
 ---
 
@@ -17,42 +17,74 @@ You are helping a developer fix a security vulnerability identified by DryRunSec
 ### Step 1: Parse the DryRunSecurity Finding
 
 Extract from the finding:
-- **Vulnerability type** (e.g., SQL Injection, XSS, SSRF, Race Condition, Prompt Injection)
+- **Vulnerability type** (e.g., SQL Injection, XSS, SSRF, IDOR, Race Condition, Prompt Injection)
 - **Affected file(s) and line numbers**
 - **The specific dangerous pattern** DryRunSecurity identified
 - **Language and framework** involved
 
 If any of this is unclear, ask the user to share the full DryRunSecurity comment.
 
-### Step 2: Understand the Codebase Context
+### Step 2: Gather Codebase Context
 
-Before proposing ANY fix, you MUST understand the existing codebase:
+Before proposing ANY fix, systematically understand the codebase. Gather context in these five areas:
 
-1. **Read the affected file(s)** - Understand the full context around the vulnerable code
-2. **Identify the tech stack** - Check package.json, requirements.txt, go.mod, Gemfile, etc.
-3. **Find existing security patterns** - Search the codebase for how similar issues are handled elsewhere:
-   - How do they do database queries in other files?
-   - What validation/sanitization utilities exist?
-   - Are there auth middlewares or decorators already in use?
-   - What's their coding style and conventions?
-4. **Check for existing utilities** - Look for security-related helpers, validators, or wrappers they've already built
+#### 2.1 Configuration Files
+Search for and analyze configuration files to understand the tech stack:
+- **Environment files**: `.env`, `.env.*`, `.envrc`
+- **Application configs**: `config.json`, `settings.py`, `application.rb`, `application.yml`
+- **Package manifests**: `package.json`, `requirements.txt`, `go.mod`, `Gemfile`, `pom.xml`, `Cargo.toml`
+- **Infrastructure configs**: `Dockerfile`, `docker-compose.yml`, `kubernetes/*.yml`
+- **Framework configs**: `next.config.js`, `vite.config.ts`, `webpack.config.js`
 
-**Key questions to answer:**
-- What ORM/database library are they using, and what version?
-- What templating engine for output encoding?
-- Do they have existing input validation patterns?
-- Is there a security middleware or utility module?
+**Goal**: Identify exact frameworks, libraries, and versions in use.
+
+#### 2.2 Authentication Patterns
+Search for how the application handles user identity verification:
+- What authentication frameworks/libraries are used?
+- How are tokens/credentials generated, validated, stored?
+- What authentication endpoints exist?
+- Look for files with names like: `auth.py`, `authentication.rb`, `auth.ts`, `passport.js`, `jwt.go`
+
+**Goal**: Understand how users prove their identity in this codebase.
+
+#### 2.3 Authorization Patterns
+Search for how the application handles access control and permissions:
+- What authorization frameworks are used?
+- How are permissions determined and enforced?
+- Is there Role-Based Access Control (RBAC)?
+- Look for permission models, policy files, access control logic
+
+**Goal**: Understand how the app decides what users can do.
+
+#### 2.4 Authorization Decorators/Middleware
+Search for authorization decorators and middleware patterns:
+- `@login_required`, `@authenticated`, `@requires_auth`
+- `@role_required`, `@has_permission`, `@requires_role`
+- `@admin_only`, `@staff_only`
+- Custom authorization decorators specific to this application
+- Middleware patterns: `requireAuth()`, `checkPermission()`, `isAdmin()`
+
+**Goal**: Find the existing patterns for protecting routes and functions.
+
+#### 2.5 Similar Code Patterns
+Search for how the codebase handles similar operations elsewhere:
+- For SQL injection: How do other files construct database queries?
+- For XSS: How do other templates handle user input?
+- For SSRF: How do other parts of the code fetch external URLs?
+- For auth bypass: How do other protected routes check permissions?
+
+**Goal**: Find existing secure patterns to follow.
 
 ### Step 3: Research the Authoritative Fix
 
 For the specific vulnerability type and their stack, research the correct fix:
 
 1. **Official framework documentation** - Search for "[framework name] [vulnerability type] prevention"
-   - Django docs for Django apps
+   - Django security docs for Django apps
    - Rails Security Guide for Rails apps
    - GORM docs for Go apps
-   - Prisma docs for Prisma apps
-   - etc.
+   - Prisma security for Prisma apps
+   - Express security best practices for Express apps
 
 2. **OWASP resources** - For general vulnerability understanding:
    - OWASP Cheat Sheet Series (e.g., "SQL Injection Prevention Cheat Sheet")
@@ -63,30 +95,33 @@ For the specific vulnerability type and their stack, research the correct fix:
    - CWE-79 (XSS)
    - CWE-918 (SSRF)
    - CWE-862 (Missing Authorization)
-   - etc.
+   - CWE-863 (Incorrect Authorization)
+   - CWE-352 (CSRF)
+   - CWE-22 (Path Traversal)
+   - CWE-78 (Command Injection)
 
-4. **Framework-specific security guides** - Many frameworks have dedicated security documentation
-
-**Important**: Prefer the official documentation for their specific framework version. Security APIs change between versions.
+**Important**: Use documentation for their specific framework version. Security APIs change between versions.
 
 ### Step 4: Apply a Contextual Fix
 
 Your fix should:
 
 1. **Match existing patterns** - If they use a certain style for database queries elsewhere, follow it
-2. **Use existing utilities** - If they have a `sanitize()` helper or `requireAuth` middleware, use it
-3. **Be minimal** - Fix the vulnerability, don't refactor the whole file
-4. **Preserve functionality** - The code should still do what it was meant to do
-5. **Be framework-idiomatic** - Use the framework's recommended approach, not a generic workaround
+2. **Use existing utilities** - If they have a `sanitize()` helper, `requireAuth` middleware, or validation library, use it
+3. **Use existing decorators** - If they have `@login_required` or similar, use it rather than inventing new patterns
+4. **Be minimal** - Fix the vulnerability, don't refactor the whole file
+5. **Preserve functionality** - The code should still do what it was meant to do
+6. **Be framework-idiomatic** - Use the framework's recommended approach
 
 ### Step 5: Explain and Verify
 
 After providing the fix:
 
-1. **Explain why the original code was vulnerable** - In plain terms
+1. **Explain why the original code was vulnerable** - In plain terms, what could an attacker do?
 2. **Explain why the fix works** - Reference the authoritative source
-3. **Suggest verification steps** - How can they test that the fix works?
-4. **Note any edge cases** - Are there related patterns they should check elsewhere?
+3. **Show how it matches existing patterns** - "This follows the same approach used in `user_controller.py:45`"
+4. **Suggest verification steps** - How can they test that the fix works?
+5. **Note related code to check** - Are there similar patterns elsewhere that might need the same fix?
 
 ## Example Workflow
 
@@ -97,29 +132,39 @@ After providing the fix:
 
 1. **Parse**: SQL Injection in Go, file `app/handlers/search.go`, line 45
 
-2. **Understand context**:
-   - Read `app/handlers/search.go` to see the vulnerable code
-   - Check `go.mod` - they're using GORM v1.25
-   - Search codebase: "How do other handlers do database queries?"
-   - Find: In `app/handlers/user.go`, they use `db.Where("id = ?", userID)` - parameterized!
+2. **Gather context**:
+   - **Config files**: Check `go.mod` → they're using GORM v1.25, Go 1.21
+   - **Auth patterns**: Found JWT auth in `pkg/auth/jwt.go`
+   - **Similar code**: In `app/handlers/user.go:32`, they use `db.Where("id = ?", userID)` - parameterized queries!
+   - **Decorators**: They have `@RequireAuth` middleware in `pkg/middleware/auth.go`
 
 3. **Research**:
    - GORM docs: "Raw SQL and SQL Builder" section shows parameterized queries
    - OWASP SQL Injection Prevention: Confirms parameterized queries are the fix
+   - CWE-89: Improper Neutralization of Special Elements used in an SQL Command
 
 4. **Apply fix**:
    - Change the vulnerable string concatenation to use GORM's parameterized query syntax
-   - Match the style used in `user.go`
+   - Match the exact style used in `user.go:32`
 
 5. **Explain**:
-   - "The original code concatenated user input directly into SQL, allowing attackers to inject malicious SQL"
-   - "The fix uses GORM's parameterized queries (the `?` placeholder), which automatically escapes input"
-   - "This matches the pattern already used in `user.go:32`"
+   - "The original code concatenated user input directly into SQL. An attacker could input `'; DROP TABLE users; --` to execute arbitrary SQL."
+   - "The fix uses GORM's parameterized queries (the `?` placeholder), which automatically escapes special characters."
+   - "This matches the pattern already used in `user.go:32` and throughout the codebase."
+   - "To verify: try the search with input containing SQL special characters like `'` or `--`"
 
 ## Key Principles
 
 ### Context is King
 DryRunSecurity spends significant effort understanding your codebase to identify real vulnerabilities. Remediation should do the same - understand the codebase to provide real, contextual fixes.
+
+### Systematic Context Gathering
+Don't just read the affected file. Systematically gather context:
+1. Configuration files → Tech stack
+2. Authentication patterns → How identity works
+3. Authorization patterns → How permissions work
+4. Decorators/middleware → Existing protection patterns
+5. Similar code → Existing secure patterns
 
 ### Don't Assume - Research
 Even for "common" vulnerabilities like SQL injection, the correct fix varies by:
@@ -128,8 +173,8 @@ Even for "common" vulnerabilities like SQL injection, the correct fix varies by:
 - Version (APIs change between versions)
 - Existing patterns (what does this codebase already do?)
 
-### Authoritative Sources Over Examples
-Don't rely on memorized examples. Look up the current, official guidance for their specific stack. Security best practices evolve.
+### Authoritative Sources Over Memorized Examples
+Don't rely on generic examples. Look up the current, official guidance for their specific stack.
 
 ### Minimal, Focused Changes
 A good security fix:
@@ -138,14 +183,15 @@ A good security fix:
 - Doesn't add unnecessary dependencies
 - Doesn't refactor unrelated code
 
-## Handling Unfamiliar Vulnerabilities
+## Handling Any Vulnerability Type
 
-DryRunSecurity detects a wide range of vulnerabilities beyond the OWASP Top 10. For any vulnerability type you encounter:
+DryRunSecurity detects a wide range of vulnerabilities. For any type:
 
-1. **Parse the finding** - Understand what DryRunSecurity identified
-2. **Research the vulnerability class** - What is this type of vulnerability? What's the attack vector?
-3. **Find the framework-specific fix** - How does their specific stack address this?
-4. **Apply contextually** - Match their existing patterns
+1. **Parse** the finding
+2. **Gather context** systematically (config, auth, authz, decorators, similar code)
+3. **Research** the vulnerability class and framework-specific fix
+4. **Apply** contextually, matching existing patterns
+5. **Explain** and suggest verification
 
 This approach works for:
 - Traditional web vulnerabilities (SQLi, XSS, CSRF, SSRF, etc.)
@@ -158,8 +204,10 @@ This approach works for:
 
 ## What NOT to Do
 
-- **Don't provide generic examples** without checking if they fit the codebase
-- **Don't assume the framework/version** - check the actual dependencies
-- **Don't over-engineer** - a simple parameterized query doesn't need a whole new abstraction layer
-- **Don't ignore existing patterns** - if they have a way of doing things, follow it
-- **Don't skip the research** - even if you "know" the fix, verify it's correct for their stack
+- **Don't skip context gathering** - Always understand the codebase first
+- **Don't provide generic examples** - Check if they fit the codebase
+- **Don't assume the framework/version** - Check the actual dependencies
+- **Don't invent new patterns** - Use existing auth decorators, middleware, utilities
+- **Don't over-engineer** - A simple parameterized query doesn't need a new abstraction
+- **Don't ignore existing patterns** - If they have a way of doing things, follow it
+- **Don't skip the research** - Even if you "know" the fix, verify it's correct for their stack

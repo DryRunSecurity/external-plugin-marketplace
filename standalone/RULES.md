@@ -1,96 +1,119 @@
 # DryRunSecurity Vulnerability Remediation
-# Version: 1.0.0
+# Version: 1.1.0
 # https://github.com/DryRunSecurity/external-plugin-marketplace
 
-When helping fix security vulnerabilities identified by DryRunSecurity, follow this process to provide fixes that are grounded in authoritative sources and contextually relevant to the user's specific codebase.
+When helping fix security vulnerabilities identified by DryRunSecurity, follow this process to provide fixes grounded in authoritative sources and contextually relevant to the user's codebase.
 
 ## Process
 
 ### 1. Parse the Finding
 Extract from the DryRunSecurity comment:
-- Vulnerability type (SQL Injection, XSS, SSRF, Race Condition, Prompt Injection, etc.)
+- Vulnerability type (SQL Injection, XSS, SSRF, IDOR, Race Condition, etc.)
 - Affected file(s) and line numbers
 - The specific dangerous pattern identified
 - Language and framework involved
 
-### 2. Understand the Codebase Context
+### 2. Gather Codebase Context
 
-Before proposing ANY fix:
+Before proposing ANY fix, systematically gather context in these five areas:
 
-1. **Read the affected file(s)** - Understand the full context around the vulnerable code
-2. **Identify the tech stack** - Check package.json, requirements.txt, go.mod, Gemfile, pom.xml, etc.
-3. **Find existing security patterns** - Search the codebase:
-   - How do other files handle similar operations (database queries, user input, auth)?
-   - What validation/sanitization utilities already exist?
-   - What auth middlewares or decorators are in use?
-4. **Check for existing utilities** - Look for security helpers, validators, or wrappers already built
+#### 2.1 Configuration Files
+Search for config files to identify the tech stack:
+- Environment: `.env`, `.env.*`
+- Package manifests: `package.json`, `requirements.txt`, `go.mod`, `Gemfile`, `pom.xml`
+- App configs: `config.json`, `settings.py`, `application.rb`
+- Framework configs: `next.config.js`, `vite.config.ts`
 
-Key questions:
-- What ORM/database library and version?
-- What templating engine for output?
-- Existing input validation patterns?
-- Security middleware or utility modules?
+**Goal**: Identify exact frameworks, libraries, and versions.
+
+#### 2.2 Authentication Patterns
+Search for how the app verifies user identity:
+- What auth frameworks/libraries are used?
+- How are tokens/credentials validated?
+- Look for: `auth.py`, `authentication.rb`, `passport.js`, `jwt.go`
+
+**Goal**: Understand how users prove identity.
+
+#### 2.3 Authorization Patterns
+Search for access control and permissions:
+- What authorization frameworks are used?
+- How are permissions enforced?
+- Is there RBAC (Role-Based Access Control)?
+
+**Goal**: Understand how the app decides what users can do.
+
+#### 2.4 Authorization Decorators/Middleware
+Search for existing protection patterns:
+- `@login_required`, `@authenticated`, `@requires_auth`
+- `@role_required`, `@has_permission`, `@admin_only`
+- Middleware: `requireAuth()`, `checkPermission()`, `isAdmin()`
+
+**Goal**: Find existing patterns for protecting routes.
+
+#### 2.5 Similar Code Patterns
+Search for how the codebase handles similar operations:
+- SQL injection: How do other files construct queries?
+- XSS: How do other templates handle user input?
+- Auth bypass: How do other routes check permissions?
+
+**Goal**: Find existing secure patterns to follow.
 
 ### 3. Research the Authoritative Fix
 
-For the specific vulnerability type and stack:
+For the specific vulnerability and stack:
+1. **Official framework docs** - "[framework] [vulnerability] prevention"
+2. **OWASP Cheat Sheets** - Vulnerability-specific guidance
+3. **CWE references** - CWE-89 (SQLi), CWE-79 (XSS), CWE-918 (SSRF), etc.
 
-1. **Official framework docs** - Search "[framework] [vulnerability type] prevention"
-2. **OWASP Cheat Sheets** - For vulnerability-specific guidance
-3. **CWE references** - For formal definitions (CWE-89, CWE-79, CWE-918, etc.)
-4. **Framework security guides** - Many frameworks have dedicated security docs
-
-**Important**: Use documentation for their specific framework version. Security APIs change.
+**Important**: Use docs for their specific framework version.
 
 ### 4. Apply a Contextual Fix
 
 Your fix should:
-- **Match existing patterns** - Follow the style used elsewhere in the codebase
-- **Use existing utilities** - If they have helpers, use them
-- **Be minimal** - Fix the vulnerability, don't refactor unrelated code
-- **Preserve functionality** - The code should still work as intended
-- **Be framework-idiomatic** - Use the framework's recommended approach
+- **Match existing patterns** - Follow the style used elsewhere
+- **Use existing utilities** - Use their helpers, middleware, validators
+- **Use existing decorators** - Don't invent new protection patterns
+- **Be minimal** - Fix the vulnerability, don't refactor
+- **Preserve functionality** - Code should still work
+- **Be framework-idiomatic** - Use recommended approach
 
 ### 5. Explain and Verify
 
-After providing the fix:
-- Explain why the original code was vulnerable (plain terms)
-- Explain why the fix works (reference authoritative source)
-- Suggest how to verify the fix
-- Note related patterns to check elsewhere
+After the fix:
+- Explain why original code was vulnerable (what could attacker do?)
+- Explain why fix works (reference authoritative source)
+- Show how it matches existing patterns ("same as `user_controller.py:45`")
+- Suggest verification steps
+- Note related code to check
 
 ## Key Principles
 
 ### Context is King
-DryRunSecurity understands your codebase to find real vulnerabilities. Remediation should do the same - understand the codebase to provide real, contextual fixes.
+DryRunSecurity understands your codebase to find real vulnerabilities. Remediation does the same - understand the codebase to provide real, contextual fixes.
+
+### Systematic Context Gathering
+1. Configuration files → Tech stack
+2. Authentication patterns → How identity works
+3. Authorization patterns → How permissions work
+4. Decorators/middleware → Existing protection patterns
+5. Similar code → Existing secure patterns
 
 ### Don't Assume - Research
-The correct fix varies by language, framework, version, and existing patterns. Look it up.
+The correct fix varies by language, framework, version, and existing patterns.
 
-### Authoritative Sources Over Memorized Examples
-Don't rely on generic examples. Check current official guidance for their specific stack.
+### Authoritative Sources Over Examples
+Look up current official guidance for their specific stack.
 
 ### Minimal, Focused Changes
 - Change only what's necessary
 - Don't introduce inconsistent patterns
 - Don't add unnecessary dependencies
-- Don't refactor unrelated code
-
-## Handling Any Vulnerability Type
-
-DryRunSecurity detects vulnerabilities beyond OWASP Top 10. For any type:
-
-1. Parse the finding
-2. Research the vulnerability class
-3. Find the framework-specific fix
-4. Apply contextually
-
-This works for: SQLi, XSS, CSRF, SSRF, IDOR, Mass Assignment, Auth Bypass, Prompt Injection, Race Conditions, Deserialization, Cryptographic issues, and anything else.
 
 ## What NOT to Do
 
+- Don't skip context gathering
 - Don't provide generic examples without checking the codebase
-- Don't assume the framework/version - check dependencies
-- Don't over-engineer - keep fixes simple
-- Don't ignore existing patterns
-- Don't skip research - verify the fix is correct for their stack
+- Don't assume framework/version - check dependencies
+- Don't invent new patterns - use existing decorators/middleware
+- Don't over-engineer
+- Don't skip research
