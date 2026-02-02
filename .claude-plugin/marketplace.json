@@ -1,20 +1,24 @@
 {
   "name": "dryrunsecurity",
   "owner": {
-    "name": "DryRunSecurity"
-  },
-  "version": "1.0.0",
-  "description": "Official DryRunSecurity skills for AI coding assistants. Fix security vulnerabilities identified in your pull requests.",
-  "publisher": {
     "name": "DryRunSecurity",
-    "email": "support@dryrunsecurity.com",
-    "url": "https://dryrunsecurity.com"
+    "email": "support@dryrunsecurity.com"
+  },
+  "metadata": {
+    "description": "Official DryRunSecurity skills for AI coding assistants. Fix security vulnerabilities identified in your pull requests.",
+    "version": "1.0.0"
   },
   "plugins": [
     {
       "name": "dryrun-remediation",
       "source": "./plugins/dryrun-remediation",
-      "description": "Fix security vulnerabilities identified by DryRunSecurity PR scans"
+      "description": "Fix security vulnerabilities identified by DryRunSecurity PR scans",
+      "version": "1.0.0",
+      "author": {
+        "name": "DryRunSecurity"
+      },
+      "category": "security",
+      "tags": ["security", "remediation", "vulnerability", "fix", "dryrunsecurity"]
     }
   ]
 }

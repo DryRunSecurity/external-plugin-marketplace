@@ -1,12 +1,9 @@
 {
   "name": "dryrun-remediation",
-  "version": "1.0.0",
   "description": "Fix security vulnerabilities identified by DryRunSecurity. Provides guided remediation for SQL injection, XSS, SSRF, IDOR, and other security findings.",
-  "skills": [
-    {
-      "name": "remediation",
-      "source": "./skills/remediation",
-      "description": "Help fix security vulnerabilities from DryRunSecurity PR comments. Use when addressing SQL injection, XSS, SSRF, IDOR, authentication issues, or other security findings."
-    }
-  ]
+  "version": "1.0.0",
+  "author": {
+    "name": "DryRunSecurity"
+  },
+  "keywords": ["security", "remediation", "vulnerability", "fix", "dryrunsecurity"]
 }

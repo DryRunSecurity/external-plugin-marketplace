@@ -53,10 +53,12 @@ curl -o .windsurfrules https://raw.githubusercontent.com/DryRunSecurity/external
 ### For Claude Code
 
 ```bash
+# Add the marketplace
 /plugin marketplace add DryRunSecurity/external-plugin-marketplace
-```
 
-The remediation skill is automatically available after adding the marketplace.
+# Install the remediation plugin
+/plugin install dryrun-remediation@dryrunsecurity
+```
 
 ### For Other AI Assistants (VS Code, Codex, etc.)
 
