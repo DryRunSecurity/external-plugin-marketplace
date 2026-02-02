@@ -5,7 +5,7 @@
   "skills": [
     {
       "name": "remediation",
-      "path": "skills/remediation",
+      "source": "./skills/remediation",
       "description": "Help fix security vulnerabilities from DryRunSecurity PR comments. Use when addressing SQL injection, XSS, SSRF, IDOR, authentication issues, or other security findings."
     }
   ]
