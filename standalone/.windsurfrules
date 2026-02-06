@@ -1,5 +1,5 @@
 # DryRunSecurity Vulnerability Remediation
-# Version: 1.0.0
+# Version: 1.0.1
 # https://github.com/DryRunSecurity/external-plugin-marketplace
 
 When helping fix security vulnerabilities identified by DryRunSecurity (from GitHub PRs or GitLab MRs), follow this process to provide fixes grounded in authoritative sources and contextually relevant to the user's codebase.
