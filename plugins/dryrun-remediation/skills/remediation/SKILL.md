@@ -1,7 +1,50 @@
 ---
 name: remediation
-version: 1.0.0
-description: Help fix security vulnerabilities identified by DryRunSecurity. Use when the user shares a DryRunSecurity comment (from a GitHub PR or GitLab MR) or asks for help fixing any security finding. Research authoritative sources and apply fixes grounded in the user's specific codebase context.
+version: 1.0.1
+description: >-
+  Helps fix security vulnerabilities identified by DryRunSecurity. Activates when
+  the user shares a DryRunSecurity comment (from a GitHub PR or GitLab MR) or asks
+  for help fixing any security finding including SQL injection, XSS, CSRF, SSRF,
+  path traversal, command injection, authentication bypass, authorization flaws,
+  and prompt injection. Researches authoritative sources and applies fixes
+  grounded in the user's specific codebase context.
+license: Proprietary
+triggers:
+  - DryRunSecurity comment
+  - DryRunSecurity finding
+  - security vulnerability
+  - fix vulnerability
+  - SQL injection
+  - XSS
+  - cross-site scripting
+  - CSRF
+  - SSRF
+  - path traversal
+  - command injection
+  - authentication bypass
+  - authorization flaw
+  - prompt injection
+  - security fix
+  - remediate
+  - CVE fix
+  - OWASP
+compatibility:
+  - claude-code
+  - cursor
+  - windsurf
+  - cline
+  - aider
+allowed_tools:
+  - Read
+  - Edit
+  - Write
+  - Glob
+  - Grep
+  - WebFetch
+  - Bash
+output: >-
+  A minimal, contextual code fix for the identified vulnerability with explanation
+  of why the original code was vulnerable, why the fix works, and verification steps.
 ---
 
 # DryRunSecurity Vulnerability Remediation
@@ -60,7 +103,11 @@ If DryRunSecurity flagged it, it passed rigorous filtering. The finding represen
 
 ## Your Process
 
+Follow these steps in order. Each step includes specific actions to take.
+
 ### Step 1: Parse the DryRunSecurity Finding
+
+**Action:** Extract the vulnerability details from the DryRunSecurity comment.
 
 DryRunSecurity findings follow this format:
 
@@ -99,6 +146,8 @@ Summary: "Prompt Injection in <code>openhands/.../file_ops.py</code>"
 If the user only shares part of the finding, ask for the full DryRunSecurity comment to get all details.
 
 ### Step 2: Gather Codebase Context
+
+**Action:** Use Glob and Grep to search the codebase. Use Read to examine files. Do NOT propose a fix until you complete this step.
 
 Before proposing ANY fix, systematically understand the codebase. Gather context in these five areas:
 
@@ -151,6 +200,8 @@ Search for how the codebase handles similar operations elsewhere:
 
 ### Step 3: Research the Authoritative Fix
 
+**Action:** Use WebFetch to look up official documentation for the framework and vulnerability type. Do NOT rely on memorized examples.
+
 For the specific vulnerability type and their stack, research the correct fix:
 
 1. **Official framework documentation** - Search for "[framework name] [vulnerability type] prevention"
@@ -178,6 +229,8 @@ For the specific vulnerability type and their stack, research the correct fix:
 
 ### Step 4: Apply a Contextual Fix
 
+**Action:** Use Edit to modify the vulnerable code. Make the minimal change necessary to fix the vulnerability.
+
 Your fix should:
 
 1. **Match existing patterns** - If they use a certain style for database queries elsewhere, follow it
@@ -188,6 +241,8 @@ Your fix should:
 6. **Be framework-idiomatic** - Use the framework's recommended approach
 
 ### Step 5: Explain and Verify
+
+**Action:** Provide a clear explanation to the user. Include all five elements below.
 
 After providing the fix:
 

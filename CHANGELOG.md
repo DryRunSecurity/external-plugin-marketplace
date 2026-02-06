@@ -5,6 +5,21 @@ All notable changes to DryRunSecurity Skills will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-02-06
+
+### Improved
+- **Enhanced skill frontmatter for better Tessl score**:
+  - Changed description to third-person voice ("Helps fix" vs "Help fix")
+  - Added explicit `triggers` list with vulnerability keywords for better activation
+  - Added `output` field describing expected return format
+  - Added `license: Proprietary` field
+  - Added `compatibility` list for supported agents (claude-code, cursor, windsurf, cline, aider)
+  - Added `allowed_tools` list for required tool access
+- **Action-oriented step guidance**:
+  - Added explicit `**Action:**` directives to each step
+  - Specified which tools to use at each step (Glob, Grep, Read, WebFetch, Edit)
+  - Added "Follow these steps in order" instruction for clarity
+
 ## [1.2.0] - 2025-01-30
 
 ### Added
@@ -54,6 +69,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Command Injection, Prompt Injection, Race Conditions
 - And more
 
+[1.0.1]: https://github.com/DryRunSecurity/external-plugin-marketplace/releases/tag/v1.0.1
 [1.2.0]: https://github.com/DryRunSecurity/external-plugin-marketplace/releases/tag/v1.2.0
 [1.1.0]: https://github.com/DryRunSecurity/external-plugin-marketplace/releases/tag/v1.1.0
 [1.0.0]: https://github.com/DryRunSecurity/external-plugin-marketplace/releases/tag/v1.0.0
