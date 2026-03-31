@@ -58,6 +58,9 @@ curl -o .windsurfrules https://raw.githubusercontent.com/DryRunSecurity/external
 
 # Install the remediation plugin
 /plugin install dryrun-remediation@dryrunsecurity
+
+# Install the PR review workflow plugin
+/plugin install dryrun-pr-review@dryrunsecurity
 ```
 
 ### For Other AI Assistants (VS Code, Codex, etc.)
@@ -134,25 +137,93 @@ The skill works for any vulnerability DryRunSecurity identifies, including:
 - Cryptographic weaknesses
 - And any other security finding
 
+## Available Plugins
+
+### dryrun-remediation
+
+**Description:** Fix security vulnerabilities identified by DryRunSecurity. Provides guided remediation for SQL injection, XSS, SSRF, IDOR, and other security findings.
+
+**Version:** 1.0.1
+
+**Skills included:**
+
+| Skill | Description |
+|-------|-------------|
+| `remediation` | Researches authoritative sources and applies contextual fixes for DryRunSecurity findings |
+
+**When to use:**
+- DryRunSecurity leaves a finding comment on your PR
+- You want guided, codebase-aware remediation for a security vulnerability
+
+**Example usage:**
+```
+DryRunSecurity found a SQL injection in my PR. Here's the comment: [paste]. Can you fix it?
+```
+
+---
+
+### dryrun-pr-review
+
+**Description:** PR workflow automation — creates commits, branches, and PRs following conventions, then polls for and addresses DryRunSecurity review comments.
+
+**Version:** 1.0.0
+
+**Skills included:**
+
+| Skill | Description |
+|-------|-------------|
+| `dryrun-pr-review` | Full PR lifecycle: branch, commit, push, PR creation, DryRunSecurity review polling |
+
+**When to use:**
+- Creating a new pull request
+- Pushing changes for DryRunSecurity review
+- Waiting on and addressing DryRunSecurity PR feedback
+
+**Example usage:**
+```
+Create a PR for my changes
+```
+```
+Submit this for review
+```
+
+**Features:**
+- Automatic branch naming: `{user}/{type}/{descriptive-name}`
+- Conventional commit messages
+- Polls for DryRunSecurity review comments (timestamp-based, reliable across edits)
+- Presents findings to user for decisions — does not auto-fix
+- Loops: apply fixes → push → re-poll until DryRunSecurity is satisfied
+
+---
+
 ## Directory Structure
 
 ```
 external-plugin-marketplace/
 ├── .claude-plugin/
-│   └── marketplace.json           # Claude Code marketplace config
+│   └── marketplace.json              # Claude Code marketplace config
 ├── plugins/
-│   └── dryrun-remediation/
+│   ├── dryrun-remediation/
+│   │   ├── .claude-plugin/
+│   │   │   └── plugin.json           # Plugin manifest
+│   │   └── skills/
+│   │       └── remediation/
+│   │           ├── SKILL.md
+│   │           ├── DRYRUN_FILTERING.md
+│   │           ├── FINDING_FORMAT.md
+│   │           └── VULNERABILITY_TYPES.md
+│   └── dryrun-pr-review/
 │       ├── .claude-plugin/
-│       │   └── plugin.json        # Claude Code plugin manifest
+│       │   └── plugin.json           # Plugin manifest
 │       └── skills/
-│           └── remediation/
-│               └── SKILL.md       # Full skill for Claude Code
+│           └── dryrun-pr-review/
+│               └── SKILL.md
 ├── standalone/
-│   ├── .cursorrules               # For Cursor IDE
-│   ├── .windsurfrules             # For Windsurf IDE
-│   └── RULES.md                   # Generic (VS Code, Codex, etc.)
-├── CONTRIBUTING.md                # Development workflow
-├── CHANGELOG.md                   # Version history
+│   ├── .cursorrules                  # For Cursor IDE
+│   ├── .windsurfrules                # For Windsurf IDE
+│   └── RULES.md                      # Generic (VS Code, Codex, etc.)
+├── CONTRIBUTING.md                   # Development workflow
+├── CHANGELOG.md                      # Version history
 └── README.md
 ```
 
