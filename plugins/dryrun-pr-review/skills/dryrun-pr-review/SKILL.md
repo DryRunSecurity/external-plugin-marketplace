@@ -35,52 +35,96 @@ PROJECT=$(git remote get-url origin \
   | sed 's|/|%2F|g')
 ```
 
-## Branch Naming
+## Convention Discovery
 
-Format: `{user}/{type}/{descriptive-name}`
+First, check for a saved conventions file:
 
-- **user**: Infer from `git branch -r | grep -oE 'origin/([a-z]+)/' | sort -u | head -5`, or from `git config user.name`/`git config user.email`
-- **type**: `feat`, `fix`, or `chore`
-- **name**: kebab-case description
-
-Example: `petek/feat/add-user-authentication`
-
-## Commit Messages
-
-Use [Conventional Commits](https://www.conventionalcommits.org/):
-
+```bash
+cat .claude/pr-conventions.md 2>/dev/null
 ```
-<type>(<scope>): <description>
 
-[optional body]
+**If the file exists**, read it and use those conventions — skip the rest of this section.
 
+**If the file does not exist**, discover conventions from the repo:
+
+```bash
+# Existing branch naming patterns
+git branch -r | grep -v HEAD | tail -20
+
+# Recent commit message style
+git log --oneline -20
+
+# Current user identity
+git config user.name && git config user.email
+```
+
+```bash
+# Existing PR/MR title and body patterns
+# GitHub
+gh pr list --state all --limit 5 --json number,title,body
+
+# GitLab
+glab mr list --state all --limit 5
+```
+
+From this, determine:
+- **Branch name**: match the pattern already in use (e.g., `user/type/name`, `type/description`, `feature/ticket-123`)
+- **Commit message format**: match what's in `git log` (Conventional Commits, imperative sentence, ticket prefix, etc.)
+- **PR/MR title and body structure**: match existing PRs/MRs — sections used, level of detail, any templates
+
+If the repo has no established conventions, use sensible defaults: `type/short-description` for branches, short imperative sentences for commits.
+
+**After discovering conventions**, summarize what you found and ask the user:
+
+> "I've detected the following conventions for this repo:
+> - **Branches**: `<pattern>`
+> - **Commits**: `<format>`
+> - **PR/MR body**: `<structure>`
+>
+> Would you like me to save these to `.claude/pr-conventions.md` so I don't need to re-detect them next time? You can edit the file at any time to override."
+
+If the user agrees, write the file:
+
+```bash
+mkdir -p .claude
+# Write .claude/pr-conventions.md with the discovered conventions
+```
+
+The file format should be human-readable so the user can edit it directly. Example:
+
+```markdown
+# PR/MR Conventions
+# Auto-detected by dryrun-pr-review. Edit to override.
+
+## Branch naming
+<detected pattern and example>
+
+## Commit messages
+<detected format and example>
+
+## PR/MR body
+<detected structure>
+```
+
+Always append to commits:
+```
 Co-Authored-By: Claude <noreply@anthropic.com>
 ```
-
-Types: `feat`, `fix`, `chore`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`
 
 ## Workflow
 
 ### 1. Branch
 
-If on `main`/`master`, create a new branch. Otherwise use the existing feature branch.
-
-```bash
-git branch -r | grep -oE 'origin/([a-z]+)/' | sort -u | head -5
-git config user.name && git config user.email
-```
+If on `main`/`master`, create a new branch following the discovered naming convention. Otherwise use the existing feature branch.
 
 ### 2. Stage & Commit
 
 ```bash
 git status
 git add <files>   # selective — never commit secrets or generated files
-git commit -m "$(cat <<'EOF'
-<type>(<scope>): <description>
+git commit -m "<message following discovered convention>
 
-Co-Authored-By: Claude <noreply@anthropic.com>
-EOF
-)"
+Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
 ### 3. Push & Create PR/MR
@@ -89,28 +133,14 @@ EOF
 git push -u origin <branch-name>
 ```
 
+Create the PR/MR with a title and body that match the style of existing PRs/MRs in this repo:
+
 ```bash
 # GitHub
-gh pr create --title "<type>(<scope>): <description>" --body "$(cat <<'EOF'
-## Summary
-<bullet points>
-
-## Test plan
-<how to verify>
-
-EOF
-)"
+gh pr create --title "<title>" --body "<body>"
 
 # GitLab
-glab mr create --title "<type>(<scope>): <description>" --description "$(cat <<'EOF'
-## Summary
-<bullet points>
-
-## Test plan
-<how to verify>
-
-EOF
-)"
+glab mr create --title "<title>" --description "<body>"
 ```
 
 Capture the PR/MR number from output and store as `MR_NUMBER`.
