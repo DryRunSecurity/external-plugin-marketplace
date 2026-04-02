@@ -1,23 +1,28 @@
 # DryRunSecurity Skills for AI Coding Assistants
 
-Official skills for AI coding assistants (Claude Code, Cursor, Windsurf, Codex) to help fix security vulnerabilities identified by DryRunSecurity.
+Official skills for AI coding assistants (Claude Code, Cursor, Windsurf, Codex) to work with DryRunSecurity — covering both vulnerability remediation and the full PR/MR review workflow.
 
 ## What This Does
 
-When DryRunSecurity scans your pull request and leaves a comment about a security vulnerability, this skill helps your AI coding assistant understand and fix the issue. Instead of just telling you there's a problem, you get guided remediation.
+This repo provides two skills that together cover the complete DryRunSecurity workflow:
 
-**The Flow:**
+**Vulnerability Remediation** — When DryRunSecurity scans your pull request and leaves a finding, this skill guides your AI assistant to understand and fix it contextually.
+
+**PR Review Workflow** — Automates the full PR/MR lifecycle: branch, commit, push, open a PR or MR, then poll for and present DryRunSecurity review comments for your decisions.
+
+**The Full Flow:**
 ```
-DryRunSecurity finds vulnerability → Comments on your PR →
-You ask your AI assistant to fix it → Skill guides contextual fix →
-You push the fix → DryRunSecurity approves
+You write code → AI creates branch + commit + PR/MR →
+DryRunSecurity scans and comments → AI presents findings →
+You decide what to fix → AI remediates and re-submits →
+DryRunSecurity approves
 ```
 
 ## Philosophy
 
-**Context is King.** DryRunSecurity spends significant effort understanding your codebase to identify *real* vulnerabilities. This remediation skill does the same - it guides AI assistants to:
+**Context is King.** DryRunSecurity spends significant effort understanding your codebase to identify *real* vulnerabilities. These skills do the same — they guide AI assistants to:
 
-1. **Understand your codebase** - Existing patterns, tech stack, utilities
+1. **Understand your codebase** - Existing patterns, tech stack, conventions
 2. **Research authoritative sources** - Official docs, OWASP, CWE references
 3. **Apply contextual fixes** - Matches your code style, uses your existing utilities
 4. **Explain and verify** - Why it was vulnerable, why the fix works
@@ -97,7 +102,7 @@ curl -o .cursorrules https://raw.githubusercontent.com/DryRunSecurity/external-p
 
 Look at the top of your rules file:
 ```
-# DryRunSecurity Vulnerability Remediation
+# DryRunSecurity AI Assistant Instructions
 # Version: 1.0.0
 ```
 
@@ -105,7 +110,9 @@ Compare with the [latest release](https://github.com/DryRunSecurity/external-plu
 
 ## Usage
 
-Once installed, share the DryRunSecurity finding with your AI assistant:
+### Fixing a DryRunSecurity finding
+
+Share the finding with your AI assistant:
 
 ```
 "DryRunSecurity found a SQL injection vulnerability in my PR.
@@ -124,6 +131,16 @@ The skill guides the assistant to:
 3. Research the authoritative fix for your framework/version
 4. Apply a fix that matches your existing patterns
 5. Explain why it was vulnerable and why the fix works
+
+### Creating a PR/MR for DryRunSecurity review
+
+```
+"Create a PR for my changes"
+"Submit this for review"
+"Push and open a pull request"
+```
+
+The skill will detect whether you're on GitHub or GitLab, discover your repo's existing branch and commit conventions, open the PR/MR, then poll for DryRunSecurity comments and present them to you for decisions.
 
 ## Supported Vulnerability Types
 
@@ -188,8 +205,9 @@ Submit this for review
 ```
 
 **Features:**
-- Automatic branch naming: `{user}/{type}/{descriptive-name}`
-- Conventional commit messages
+- Detects GitHub vs GitLab automatically from git remote
+- Discovers and follows your repo's existing branch and commit conventions
+- Saves discovered conventions to `.claude/pr-conventions.md` for future runs
 - Polls for DryRunSecurity review comments (timestamp-based, reliable across edits)
 - Presents findings to user for decisions — does not auto-fix
 - Loops: apply fixes → push → re-poll until DryRunSecurity is satisfied
@@ -221,7 +239,8 @@ external-plugin-marketplace/
 ├── standalone/
 │   ├── .cursorrules                  # For Cursor IDE
 │   ├── .windsurfrules                # For Windsurf IDE
-│   └── RULES.md                      # Generic (VS Code, Codex, etc.)
+│   ├── RULES.md                      # Generic (VS Code, Codex, etc.)
+│   └── copilot-instructions.md       # For GitHub Copilot (.github/copilot-instructions.md)
 ├── CONTRIBUTING.md                   # Development workflow
 ├── CHANGELOG.md                      # Version history
 └── README.md
