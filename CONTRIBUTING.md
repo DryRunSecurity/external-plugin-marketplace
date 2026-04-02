@@ -10,12 +10,14 @@
    ```
 
 2. **Make your changes** to the skill files:
-   - `plugins/dryrun-remediation/skills/remediation/SKILL.md` - Claude Code version
-   - `standalone/.cursorrules` - Cursor version
-   - `standalone/.windsurfrules` - Windsurf version
-   - `standalone/RULES.md` - Generic version
+   - `plugins/dryrun-remediation/skills/remediation/SKILL.md` - Remediation skill (Claude Code)
+   - `plugins/dryrun-pr-review/skills/dryrun-pr-review/SKILL.md` - PR review skill (Claude Code)
+   - `standalone/.cursorrules` - Cursor (both workflows combined)
+   - `standalone/.windsurfrules` - Windsurf (both workflows combined)
+   - `standalone/RULES.md` - Generic/VS Code (both workflows combined)
+   - `standalone/copilot-instructions.md` - GitHub Copilot (both workflows combined)
 
-3. **Keep files in sync** - The standalone files should be condensed versions of SKILL.md. When updating one, update all.
+3. **Keep files in sync** - The standalone files combine both workflows (Workflow 1: Remediation, Workflow 2: PR Review). When updating a workflow, update the corresponding Claude Code SKILL.md and all four standalone files.
 
 4. **Open a PR** to `main`
 
@@ -39,6 +41,7 @@ After merging changes to `main`:
 3. **Update manifest versions** (if needed):
    - `.claude-plugin/marketplace.json`
    - `plugins/dryrun-remediation/.claude-plugin/plugin.json`
+   - `plugins/dryrun-pr-review/.claude-plugin/plugin.json`
 
 4. **Commit the version bump**:
    ```bash
@@ -70,10 +73,19 @@ We follow [Semantic Versioning](https://semver.org/):
 
 When making changes, ensure all versions are updated:
 
+**Remediation workflow changes:**
 - [ ] `plugins/dryrun-remediation/skills/remediation/SKILL.md`
+- [ ] Workflow 1 section in all four standalone files
+
+**PR review workflow changes:**
+- [ ] `plugins/dryrun-pr-review/skills/dryrun-pr-review/SKILL.md`
+- [ ] Workflow 2 section in all four standalone files
+
+**All releases:**
 - [ ] `standalone/.cursorrules`
 - [ ] `standalone/.windsurfrules`
 - [ ] `standalone/RULES.md`
+- [ ] `standalone/copilot-instructions.md`
 - [ ] Version numbers match across all files
 - [ ] `CHANGELOG.md` updated (for releases)
 
@@ -92,7 +104,7 @@ Before releasing:
 
 ```bash
 # Check current version in files
-grep -h "Version:" standalone/.cursorrules plugins/dryrun-remediation/skills/remediation/SKILL.md
+grep -h "Version:" standalone/.cursorrules plugins/dryrun-remediation/skills/remediation/SKILL.md plugins/dryrun-pr-review/skills/dryrun-pr-review/SKILL.md
 
 # See all tags
 git tag -l
