@@ -1,6 +1,28 @@
 ---
 name: dryrun-pr-review
-description: Use when the user asks to create a PR, open a pull request, submit for review, or push changes for review
+version: 1.0.0
+description: >-
+  Manages the full PR/MR lifecycle for DryRunSecurity users. Activates when
+  the user asks to create a PR or MR, submit changes for review, push for review,
+  or open a pull request. Detects GitHub vs GitLab automatically, discovers repo
+  conventions, then branches, commits, pushes, opens the PR/MR, and polls for
+  DryRunSecurity review comments.
+license: Proprietary
+triggers:
+  - create a PR
+  - open a pull request
+  - submit for review
+  - push changes for review
+  - push and open a PR
+  - create a merge request
+  - open an MR
+compatibility: claude-code, cursor, windsurf, cline, aider
+allowed_tools:
+  - Read
+  - Bash
+output: >-
+  A PR or MR opened on GitHub or GitLab, with DryRunSecurity review comments
+  presented to the user for decisions. Loops until DryRunSecurity is satisfied.
 ---
 
 # DryRunSecurity PR Review Workflow
@@ -210,7 +232,9 @@ For comments the user wants fixed:
 ```bash
 # Make code changes, then:
 git add <files>
-git commit -m "fix: address DryRunSecurity finding - <description>"
+git commit -m "<message following discovered convention — addressing DryRunSecurity finding>
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
 For comments the user wants to decline:
