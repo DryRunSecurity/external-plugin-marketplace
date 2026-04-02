@@ -5,6 +5,17 @@ All notable changes to DryRunSecurity Skills will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- **`dryrun-pr-review` plugin**: Full PR/MR lifecycle skill for DryRunSecurity users
+  - Detects GitHub vs GitLab from `git remote get-url origin`; uses `gh` or `glab` accordingly
+  - Convention discovery: reads existing branches, commit history, and PR/MR titles before creating anything — no opinionated defaults imposed
+  - Saves discovered conventions to `.claude/pr-conventions.md` (with user consent) for future runs
+  - Polls for DryRunSecurity review comments (timestamp-based); presents findings to user for decisions
+  - Loops: apply fixes → push → re-poll until DryRunSecurity is satisfied
+- **Combined standalone files**: `.cursorrules`, `.windsurfrules`, `RULES.md`, and `copilot-instructions.md` now contain both the Remediation workflow (Workflow 1) and PR Review workflow (Workflow 2) with routing instructions for IDEs
+
 ## [1.0.1] - 2026-02-06
 
 ### Improved
@@ -69,6 +80,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Command Injection, Prompt Injection, Race Conditions
 - And more
 
+[Unreleased]: https://github.com/DryRunSecurity/external-plugin-marketplace/compare/v1.0.1...HEAD
 [1.0.1]: https://github.com/DryRunSecurity/external-plugin-marketplace/releases/tag/v1.0.1
 [1.2.0]: https://github.com/DryRunSecurity/external-plugin-marketplace/releases/tag/v1.2.0
 [1.1.0]: https://github.com/DryRunSecurity/external-plugin-marketplace/releases/tag/v1.1.0
