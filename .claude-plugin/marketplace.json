@@ -24,7 +24,7 @@
       "name": "dryrun-pr-review",
       "source": "./plugins/dryrun-pr-review",
       "description": "PR workflow automation for DryRunSecurity users - creates commits, branches, and PRs following conventions, then polls for and addresses DryRunSecurity review comments.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": {
         "name": "DryRunSecurity"
       },

@@ -201,7 +201,7 @@ DryRunSecurity found a SQL injection in my PR. Here's the comment: [paste]. Can 
 
 **Description:** PR workflow automation — creates commits, branches, and PRs following conventions, then polls for and addresses DryRunSecurity review comments.
 
-**Version:** 1.0.0
+**Version:** 1.0.1
 
 **Skills included:**
 

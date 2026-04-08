@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Loops: apply fixes → push → re-poll until DryRunSecurity is satisfied
 - **Combined standalone files**: `.cursorrules`, `.windsurfrules`, `RULES.md`, and `copilot-instructions.md` now contain both the Remediation workflow (Workflow 1) and PR Review workflow (Workflow 2) with routing instructions for IDEs
 
+### Improved
+- **Reduced permission prompts in `dryrun-pr-review`** (Claude Code and all standalone formats):
+  - Merged Platform Detection and Repo Info into a single script — was two separate shell invocations
+  - Merged convention discovery bash blocks into one conditional script — was three separate invocations
+  - Added explicit instruction to keep the polling loop as a single shell invocation
+  - Added instruction to consolidate related commands to minimise permission prompts
+- **Fixed `allowed_tools` in `dryrun-pr-review` SKILL.md**: added `Write`, `Edit`, `Glob`, `Grep` — previously missing, causing unexpected permission prompts when writing conventions file or making code edits
+- **README**: added recommended Claude Code permission pre-approvals for `git`, `gh`, and `glab` to reduce prompts at the session level
+- **Fixed `copilot-instructions.md`** version out of sync with other standalone files (was `1.0.0`, now `1.0.1`)
+
 ## [1.0.1] - 2026-02-06
 
 ### Improved
