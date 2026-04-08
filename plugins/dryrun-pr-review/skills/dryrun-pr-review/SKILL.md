@@ -1,6 +1,6 @@
 ---
 name: dryrun-pr-review
-version: 1.0.1
+version: 1.0.0
 description: >-
   Manages the full PR/MR lifecycle for DryRunSecurity users. Activates when
   the user asks to create a PR or MR, submit changes for review, push for review,

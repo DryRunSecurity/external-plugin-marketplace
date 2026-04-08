@@ -1,5 +1,5 @@
 # DryRunSecurity AI Assistant Instructions
-# Version: 1.0.1
+# Version: 1.0.0
 # https://github.com/DryRunSecurity/external-plugin-marketplace
 # Place this file at .github/copilot-instructions.md in your repository
 
