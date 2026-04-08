@@ -68,6 +68,24 @@ curl -o .windsurfrules https://raw.githubusercontent.com/DryRunSecurity/external
 /plugin install dryrun-pr-review@dryrunsecurity
 ```
 
+**Recommended: pre-approve the CLI tools** to avoid repeated permission prompts during the PR workflow. Run this once after installing:
+
+```bash
+/permissions allow Bash(git:*)
+/permissions allow Bash(gh:*)
+/permissions allow Bash(glab:*)
+```
+
+Or add them to your project's `.claude/settings.json`:
+
+```json
+{
+  "permissions": {
+    "allow": ["Bash(git:*)", "Bash(gh:*)", "Bash(glab:*)"]
+  }
+}
+```
+
 ### For Other AI Assistants (VS Code, Codex, etc.)
 
 Download or copy [`standalone/RULES.md`](standalone/RULES.md) into your AI assistant's system prompt or rules configuration.

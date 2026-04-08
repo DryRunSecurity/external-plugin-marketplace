@@ -19,6 +19,10 @@ triggers:
 compatibility: claude-code, cursor, windsurf, cline, aider
 allowed_tools:
   - Read
+  - Write
+  - Edit
+  - Glob
+  - Grep
   - Bash
 output: >-
   A PR or MR opened on GitHub or GitLab, with DryRunSecurity review comments
@@ -29,32 +33,24 @@ output: >-
 
 Full PR/MR lifecycle: detect platform, branch, commit, open PR or MR, poll for DryRunSecurity comments, present findings to the user.
 
-## Platform Detection
+## Platform Detection & Repo Info
 
-Run this first. All subsequent steps reference `$PLATFORM`, `$MR_NUMBER`, and `$PROJECT`.
+Run this first as a single script. All subsequent steps reference `$PLATFORM`, `$OWNER`, `$REPO`, `$PROJECT`, `$MR_NUMBER`.
 
 ```bash
 REMOTE_URL=$(git remote get-url origin)
 
 if echo "$REMOTE_URL" | grep -q "github.com"; then
   PLATFORM="github"
+  OWNER_REPO=$(gh repo view --json owner,name --jq '"\(.owner.login)/\(.name)"')
+  OWNER=$(echo "$OWNER_REPO" | cut -d'/' -f1)
+  REPO=$(echo "$OWNER_REPO" | cut -d'/' -f2)
 else
   PLATFORM="gitlab"
+  PROJECT=$(git remote get-url origin \
+    | sed -E 's|.*[:/]([^/]+/[^/]+?)(\.git)?$|\1|' \
+    | sed 's|/|%2F|g')
 fi
-```
-
-## Getting Repo Info
-
-```bash
-# GitHub
-OWNER_REPO=$(gh repo view --json owner,name --jq '"\(.owner.login)/\(.name)"')
-OWNER=$(echo "$OWNER_REPO" | cut -d'/' -f1)
-REPO=$(echo "$OWNER_REPO" | cut -d'/' -f2)
-
-# GitLab — parse and URL-encode the project path for API calls
-PROJECT=$(git remote get-url origin \
-  | sed -E 's|.*[:/]([^/]+/[^/]+?)(\.git)?$|\1|' \
-  | sed 's|/|%2F|g')
 ```
 
 ## Convention Discovery
@@ -67,26 +63,19 @@ cat .claude/pr-conventions.md 2>/dev/null
 
 **If the file exists**, read it and use those conventions — skip the rest of this section.
 
-**If the file does not exist**, discover conventions from the repo:
+**If the file does not exist**, discover conventions from the repo in a single script:
 
 ```bash
-# Existing branch naming patterns
-git branch -r | grep -v HEAD | tail -20
+echo "=== Recent branches ===" && git branch -r | grep -v HEAD | tail -20
+echo "=== Recent commits ===" && git log --oneline -20
+echo "=== Git identity ===" && git config user.name && git config user.email
 
-# Recent commit message style
-git log --oneline -20
-
-# Current user identity
-git config user.name && git config user.email
-```
-
-```bash
-# Existing PR/MR title and body patterns
-# GitHub
-gh pr list --state all --limit 5 --json number,title,body
-
-# GitLab
-glab mr list --state all --limit 5
+# Existing PR/MR title and body patterns (platform-specific)
+if [ "$PLATFORM" = "github" ]; then
+  echo "=== Recent PRs ===" && gh pr list --state all --limit 5 --json number,title,body
+else
+  echo "=== Recent MRs ===" && glab mr list --state all --limit 5
+fi
 ```
 
 From this, determine:
@@ -262,3 +251,5 @@ Return to Step 4 using the current time as the new `START_TIME`. Continue until 
 - Always read files before suggesting changes
 - Use `gh` for GitHub repos, `glab` for GitLab repos — detect via `git remote get-url origin`
 - Timestamp-based polling only — never count-based
+- **Minimize Bash invocations** — consolidate related commands into single scripts (e.g., combine `git add` + `git commit` + `git push` into one call). Each separate Bash call is a potential permission prompt for the user.
+- The polling loop in Step 4 must remain a single Bash invocation — do not break it into multiple calls
