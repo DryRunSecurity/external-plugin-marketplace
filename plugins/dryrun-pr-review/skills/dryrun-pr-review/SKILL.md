@@ -1,12 +1,9 @@
 ---
 name: dryrun-pr-review
-version: 1.0.0
+version: 1.0.1
 description: >-
-  Manages the full PR/MR lifecycle for DryRunSecurity users. Activates when
-  the user asks to create a PR or MR, submit changes for review, push for review,
-  or open a pull request. Detects GitHub vs GitLab automatically, discovers repo
-  conventions, then branches, commits, pushes, opens the PR/MR, and polls for
-  DryRunSecurity review comments.
+  Activates when the user asks to create a PR or MR, submit changes for review,
+  push for review, or open a pull request.
 license: Proprietary
 triggers:
   - create a PR
@@ -19,7 +16,6 @@ triggers:
 compatibility: claude-code, cursor, windsurf, cline, aider
 allowed_tools:
   - Read
-  - Write
   - Edit
   - Glob
   - Grep
@@ -35,105 +31,30 @@ Full PR/MR lifecycle: detect platform, branch, commit, open PR or MR, poll for D
 
 ## Platform Detection & Repo Info
 
-Run this first as a single script. All subsequent steps reference `$PLATFORM`, `$OWNER`, `$REPO`, `$PROJECT`, `$MR_NUMBER`.
+Run this and read the output to determine platform and repo coordinates:
 
 ```bash
-REMOTE_URL=$(git remote get-url origin)
-
-if echo "$REMOTE_URL" | grep -q "github.com"; then
-  PLATFORM="github"
-  OWNER_REPO=$(gh repo view --json owner,name --jq '"\(.owner.login)/\(.name)"')
-  OWNER=$(echo "$OWNER_REPO" | cut -d'/' -f1)
-  REPO=$(echo "$OWNER_REPO" | cut -d'/' -f2)
-else
-  PLATFORM="gitlab"
-  PROJECT=$(git remote get-url origin \
-    | sed -E 's|.*[:/]([^/]+/[^/]+?)(\.git)?$|\1|' \
-    | sed 's|/|%2F|g')
-fi
+git remote get-url origin
 ```
 
-## Convention Discovery
+From the URL:
+- Contains `github.com` → GitHub; use `gh` CLI. Extract `OWNER` and `REPO` from the URL path.
+- Otherwise → GitLab; use `glab` CLI. Extract the project path and URL-encode it (replace `/` with `%2F`) for API calls.
 
-First, check for a saved conventions file:
-
-```bash
-cat .claude/pr-conventions.md 2>/dev/null
-```
-
-**If the file exists**, read it and use those conventions — skip the rest of this section.
-
-**If the file does not exist**, discover conventions from the repo in a single script:
-
-```bash
-echo "=== Recent branches ===" && git branch -r | grep -v HEAD | tail -20
-echo "=== Recent commits ===" && git log --oneline -20
-echo "=== Git identity ===" && git config user.name && git config user.email
-
-# Existing PR/MR title and body patterns (platform-specific)
-if [ "$PLATFORM" = "github" ]; then
-  echo "=== Recent PRs ===" && gh pr list --state all --limit 5 --json number,title,body
-else
-  echo "=== Recent MRs ===" && glab mr list --state all --limit 5
-fi
-```
-
-From this, determine:
-- **Branch name**: match the pattern already in use (e.g., `user/type/name`, `type/description`, `feature/ticket-123`)
-- **Commit message format**: match what's in `git log` (Conventional Commits, imperative sentence, ticket prefix, etc.)
-- **PR/MR title and body structure**: match existing PRs/MRs — sections used, level of detail, any templates
-
-If the repo has no established conventions, use sensible defaults: `type/short-description` for branches, short imperative sentences for commits.
-
-**After discovering conventions**, summarize what you found and ask the user:
-
-> "I've detected the following conventions for this repo:
-> - **Branches**: `<pattern>`
-> - **Commits**: `<format>`
-> - **PR/MR body**: `<structure>`
->
-> Would you like me to save these to `.claude/pr-conventions.md` so I don't need to re-detect them next time? You can edit the file at any time to override."
-
-If the user agrees, write the file:
-
-```bash
-mkdir -p .claude
-# Write .claude/pr-conventions.md with the discovered conventions
-```
-
-The file format should be human-readable so the user can edit it directly. Example:
-
-```markdown
-# PR/MR Conventions
-# Auto-detected by dryrun-pr-review. Edit to override.
-
-## Branch naming
-<detected pattern and example>
-
-## Commit messages
-<detected format and example>
-
-## PR/MR body
-<detected structure>
-```
-
-Always append to commits:
-```
-Co-Authored-By: Claude <noreply@anthropic.com>
-```
+All subsequent steps reference `PLATFORM`, `OWNER`, `REPO` (GitHub) or `PROJECT` (GitLab), and `MR_NUMBER`.
 
 ## Workflow
 
 ### 1. Branch
 
-If on `main`/`master`, create a new branch following the discovered naming convention. Otherwise use the existing feature branch.
+If on `main`/`master`, create a new branch following this repo's naming conventions. Otherwise use the existing feature branch.
 
 ### 2. Stage & Commit
 
 ```bash
 git status
 git add <files>   # selective — never commit secrets or generated files
-git commit -m "<message following discovered convention>
+git commit -m "<message following this repo's commit style>
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
@@ -144,7 +65,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 git push -u origin <branch-name>
 ```
 
-Create the PR/MR with a title and body that match the style of existing PRs/MRs in this repo:
+Create the PR/MR following this repo's title and body conventions:
 
 ```bash
 # GitHub
@@ -221,7 +142,7 @@ For comments the user wants fixed:
 ```bash
 # Make code changes, then:
 git add <files>
-git commit -m "<message following discovered convention — addressing DryRunSecurity finding>
+git commit -m "<message following this repo's commit style — addressing DryRunSecurity finding>
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
