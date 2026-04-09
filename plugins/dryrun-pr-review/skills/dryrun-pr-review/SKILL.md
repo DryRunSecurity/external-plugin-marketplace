@@ -65,21 +65,38 @@ Co-Authored-By: Claude <noreply@anthropic.com>"
 git push -u origin <branch-name>
 ```
 
-Create the PR/MR following this repo's title and body conventions:
+Check whether a PR/MR already exists for this branch before creating one:
 
 ```bash
-# GitHub
-gh pr create --title "<title>" --body "<body>"
+# GitHub — reuse existing PR if present
+EXISTING=$(gh pr view --json number --jq '.number' 2>/dev/null)
+if [ -n "$EXISTING" ]; then
+    echo "Using existing PR #$EXISTING"
+    MR_NUMBER=$EXISTING
+else
+    gh pr create --title "<title>" --body "<body>"
+    # capture MR_NUMBER from the URL in the output (last path segment)
+fi
 
-# GitLab
-glab mr create --title "<title>" --description "<body>"
+# GitLab — reuse existing MR if present
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+EXISTING=$(glab mr list --source-branch "$BRANCH" 2>/dev/null | awk 'NR==2{print $1}' | tr -d '!')
+if [ -n "$EXISTING" ]; then
+    echo "Using existing MR !$EXISTING"
+    MR_NUMBER=$EXISTING
+else
+    glab mr create --title "<title>" --description "<body>"
+    # capture MR_NUMBER from the output
+fi
 ```
 
-Capture the PR/MR number from output and store as `MR_NUMBER`.
+Store the result as `MR_NUMBER`.
 
 ### 4. Poll for DryRunSecurity Review Comments
 
 Poll for up to **10 minutes** (every 30 seconds). Use timestamp-based polling — not count-based. Comments can be edited/replaced.
+
+Exit as soon as DRS activity is detected — a DryRunSecurity comment means the review is complete.
 
 ```bash
 START_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
@@ -89,7 +106,10 @@ POLL_INTERVAL=30
 
 while true; do
     ELAPSED=$(( $(date +%s) - START_EPOCH ))
-    [ $ELAPSED -ge $TIMEOUT ] && echo "Timeout." && break
+    if [ $ELAPSED -ge $TIMEOUT ]; then
+        echo "Timed out after ${ELAPSED}s with no DryRunSecurity activity."
+        break
+    fi
 
     if [ "$PLATFORM" = "github" ]; then
         DRS_NEW=$(gh api repos/${OWNER}/${REPO}/issues/${MR_NUMBER}/comments \
@@ -98,19 +118,22 @@ while true; do
         DRS_REVIEWS=$(gh api repos/${OWNER}/${REPO}/pulls/${MR_NUMBER}/reviews \
           --jq "[.[] | select((.user.login | test(\"dryrunsecurity\"; \"i\")) and .submitted_at > \"${START_TIME}\")] | length")
 
-        echo "DRS comments: $DRS_NEW, DRS reviews: $DRS_REVIEWS (${ELAPSED}s elapsed)"
+        TOTAL=$(( DRS_NEW + DRS_REVIEWS ))
+        echo "Waiting for DryRunSecurity review... (${ELAPSED}s elapsed)"
+        [ "$TOTAL" -gt 0 ] && echo "DryRunSecurity review received: ${DRS_NEW} comment(s), ${DRS_REVIEWS} review(s)." && break
     else
         DRS_NEW=$(glab api projects/${PROJECT}/merge_requests/${MR_NUMBER}/notes \
-          --jq "[.[] | select((.author.username == \"dryrunsecurity\") and .created_at > \"${START_TIME}\")] | length")
+          | jq "[.[] | select(.author.username == \"dryrunsecurity\" and .created_at > \"${START_TIME}\")] | length")
 
-        echo "DRS notes: $DRS_NEW (${ELAPSED}s elapsed)"
+        echo "Waiting for DryRunSecurity review... (${ELAPSED}s elapsed)"
+        [ "$DRS_NEW" -gt 0 ] && echo "DryRunSecurity review received: ${DRS_NEW} note(s)." && break
     fi
 
     sleep $POLL_INTERVAL
 done
 ```
 
-Timeout with no new comments = review complete, proceed.
+If the loop timed out with no DRS activity, inform the user: DryRunSecurity may not be configured on this repo, or the review may still be pending.
 
 ### 5. Present DryRunSecurity Comments to User
 
@@ -126,7 +149,7 @@ gh api repos/${OWNER}/${REPO}/pulls/${MR_NUMBER}/reviews \
 
 # GitLab
 glab api projects/${PROJECT}/merge_requests/${MR_NUMBER}/notes \
-  --jq '.[] | select(.author.username == "dryrunsecurity") | {id: .id, body: .body}'
+  | jq '.[] | select(.author.username == "dryrunsecurity") | {id: .id, body: .body}'
 ```
 
 For each comment, present:
@@ -147,15 +170,15 @@ git commit -m "<message following this repo's commit style — addressing DryRun
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
-For comments the user wants to decline:
+For comments the user wants to decline, post a new comment on the PR/MR thread explaining why:
 ```bash
-# GitHub
-gh api repos/${OWNER}/${REPO}/pulls/${MR_NUMBER}/comments/${COMMENT_ID}/replies \
-  -f body="Not addressing: <explanation>"
+# GitHub — DryRunSecurity posts on the PR thread (not inline), so reply via issue comments
+gh api repos/${OWNER}/${REPO}/issues/${MR_NUMBER}/comments \
+  -f body="Not addressing DryRunSecurity finding: <explanation>"
 
 # GitLab
 glab api projects/${PROJECT}/merge_requests/${MR_NUMBER}/notes \
-  -f body="Not addressing: <explanation>"
+  --method POST -f body="Not addressing DryRunSecurity finding: <explanation>"
 ```
 
 ### 7. Push & Re-poll
