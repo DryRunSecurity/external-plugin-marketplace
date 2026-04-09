@@ -133,7 +133,7 @@ while true; do
 done
 ```
 
-If the loop timed out with no DRS activity, inform the user: DryRunSecurity may not be configured on this repo, or the review may still be pending.
+If the loop timed out with no DRS activity, inform the user: the DryRunSecurity review period is complete.
 
 ### 5. Present DryRunSecurity Comments to User
 
