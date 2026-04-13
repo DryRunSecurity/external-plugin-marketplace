@@ -2,7 +2,7 @@
 name: dryrun-pr-review
 version: 1.0.1
 description: >-
-  Activates when the user asks to create a PR or MR, submit changes for review,
+  Use when the user asks to create a pull request or merge request, submit changes for review,
   push for review, or open a pull request.
 license: Proprietary
 triggers:
@@ -21,13 +21,13 @@ allowed_tools:
   - Grep
   - Bash
 output: >-
-  A PR or MR opened on GitHub or GitLab, with DryRunSecurity review comments
+  A pull request is opened, with DryRunSecurity review comments
   presented to the user for decisions. Loops until DryRunSecurity is satisfied.
 ---
 
 # DryRunSecurity PR Review Workflow
 
-Full PR/MR lifecycle: detect platform, branch, commit, open PR or MR, poll for DryRunSecurity comments, present findings to the user.
+Full PR lifecycle: detect platform, branch, commit, open a PR, poll for DryRunSecurity comments, present findings to the user.
 
 ## Platform Detection & Repo Info
 
@@ -41,7 +41,7 @@ From the URL:
 - Contains `github.com` → GitHub; use `gh` CLI. Extract `OWNER` and `REPO` from the URL path.
 - Otherwise → GitLab; use `glab` CLI. Extract the project path and URL-encode it (replace `/` with `%2F`) for API calls.
 
-All subsequent steps reference `PLATFORM`, `OWNER`, `REPO` (GitHub) or `PROJECT` (GitLab), and `MR_NUMBER`.
+All subsequent steps reference `PLATFORM`, `OWNER`, `REPO` (GitHub) or `PROJECT` (GitLab), and `PR_NUMBER`.
 
 ## Workflow
 
@@ -56,41 +56,41 @@ git status
 git add <files>   # selective — never commit secrets or generated files
 git commit -m "<message following this repo's commit style>
 
-Co-Authored-By: Claude <noreply@anthropic.com>"
+Co-Authored-By: DryRun Security <noreply@dryrun.security>"
 ```
 
-### 3. Push & Create PR/MR
+### 3. Push & Open PR
 
 ```bash
 git push -u origin <branch-name>
 ```
 
-Check whether a PR/MR already exists for this branch before creating one:
+Check whether a pull request already exists for this branch before creating one:
 
 ```bash
 # GitHub — reuse existing PR if present
 EXISTING=$(gh pr view --json number --jq '.number' 2>/dev/null)
 if [ -n "$EXISTING" ]; then
     echo "Using existing PR #$EXISTING"
-    MR_NUMBER=$EXISTING
+    PR_NUMBER=$EXISTING
 else
     gh pr create --title "<title>" --body "<body>"
-    # capture MR_NUMBER from the URL in the output (last path segment)
+    # capture PR_NUMBER from the URL in the output (last path segment)
 fi
 
 # GitLab — reuse existing MR if present
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
 EXISTING=$(glab mr list --source-branch "$BRANCH" 2>/dev/null | awk 'NR==2{print $1}' | tr -d '!')
 if [ -n "$EXISTING" ]; then
-    echo "Using existing MR !$EXISTING"
-    MR_NUMBER=$EXISTING
+    echo "Using existing PR !$EXISTING"
+    PR_NUMBER=$EXISTING
 else
     glab mr create --title "<title>" --description "<body>"
-    # capture MR_NUMBER from the output
+    # capture PR_NUMBER from the output
 fi
 ```
 
-Store the result as `MR_NUMBER`.
+Store the result as `PR_NUMBER`.
 
 ### 4. Poll for DryRunSecurity Review Comments
 
@@ -112,17 +112,17 @@ while true; do
     fi
 
     if [ "$PLATFORM" = "github" ]; then
-        DRS_NEW=$(gh api repos/${OWNER}/${REPO}/issues/${MR_NUMBER}/comments \
+        DRS_NEW=$(gh api repos/${OWNER}/${REPO}/issues/${PR_NUMBER}/comments \
           --jq "[.[] | select((.user.login == \"dryrunsecurity\" or .user.login == \"dryrunsecurity[bot]\") and .created_at > \"${START_TIME}\")] | length")
 
-        DRS_REVIEWS=$(gh api repos/${OWNER}/${REPO}/pulls/${MR_NUMBER}/reviews \
+        DRS_REVIEWS=$(gh api repos/${OWNER}/${REPO}/pulls/${PR_NUMBER}/reviews \
           --jq "[.[] | select((.user.login | test(\"dryrunsecurity\"; \"i\")) and .submitted_at > \"${START_TIME}\")] | length")
 
         TOTAL=$(( DRS_NEW + DRS_REVIEWS ))
         echo "Waiting for DryRunSecurity review... (${ELAPSED}s elapsed)"
         [ "$TOTAL" -gt 0 ] && echo "DryRunSecurity review received: ${DRS_NEW} comment(s), ${DRS_REVIEWS} review(s)." && break
     else
-        DRS_NEW=$(glab api projects/${PROJECT}/merge_requests/${MR_NUMBER}/notes \
+        DRS_NEW=$(glab api projects/${PROJECT}/merge_requests/${PR_NUMBER}/notes \
           | jq "[.[] | select(.author.username == \"dryrunsecurity\" and .created_at > \"${START_TIME}\")] | length")
 
         echo "Waiting for DryRunSecurity review... (${ELAPSED}s elapsed)"
@@ -141,14 +141,14 @@ Fetch all DryRunSecurity comments and **present them to the user** — do not fi
 
 ```bash
 # GitHub
-gh api repos/${OWNER}/${REPO}/issues/${MR_NUMBER}/comments \
+gh api repos/${OWNER}/${REPO}/issues/${PR_NUMBER}/comments \
   --jq '.[] | select(.user.login == "dryrunsecurity" or .user.login == "dryrunsecurity[bot]") | {id: .id, body: .body}'
 
-gh api repos/${OWNER}/${REPO}/pulls/${MR_NUMBER}/reviews \
+gh api repos/${OWNER}/${REPO}/pulls/${PR_NUMBER}/reviews \
   --jq '.[] | select(.user.login | test("dryrunsecurity"; "i")) | {id: .id, body: .body, state: .state}'
 
 # GitLab
-glab api projects/${PROJECT}/merge_requests/${MR_NUMBER}/notes \
+glab api projects/${PROJECT}/merge_requests/${PR_NUMBER}/notes \
   | jq '.[] | select(.author.username == "dryrunsecurity") | {id: .id, body: .body}'
 ```
 
@@ -170,14 +170,14 @@ git commit -m "<message following this repo's commit style — addressing DryRun
 Co-Authored-By: Claude <noreply@anthropic.com>"
 ```
 
-For comments the user wants to decline, post a new comment on the PR/MR thread explaining why:
+For comments the user wants to decline, post a new comment on the PR thread explaining why:
 ```bash
 # GitHub — DryRunSecurity posts on the PR thread (not inline), so reply via issue comments
-gh api repos/${OWNER}/${REPO}/issues/${MR_NUMBER}/comments \
+gh api repos/${OWNER}/${REPO}/issues/${PR_NUMBER}/comments \
   -f body="Not addressing DryRunSecurity finding: <explanation>"
 
 # GitLab
-glab api projects/${PROJECT}/merge_requests/${MR_NUMBER}/notes \
+glab api projects/${PROJECT}/merge_requests/${PR_NUMBER}/notes \
   --method POST -f body="Not addressing DryRunSecurity finding: <explanation>"
 ```
 
