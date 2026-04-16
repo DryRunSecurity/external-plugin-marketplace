@@ -5,7 +5,7 @@
     "email": "support@dryrunsecurity.com"
   },
   "metadata": {
-    "description": "Official DryRunSecurity skills for AI coding assistants. Fix security vulnerabilities identified in your pull requests.",
+    "description": "Official DryRunSecurity skills for AI coding assistants. Covers vulnerability remediation and the full PR/MR review workflow.",
     "version": "1.0.1"
   },
   "plugins": [
@@ -19,6 +19,17 @@
       },
       "category": "security",
       "tags": ["security", "remediation", "vulnerability", "fix", "dryrunsecurity"]
+    },
+    {
+      "name": "dryrun-pr-review",
+      "source": "./plugins/dryrun-pr-review",
+      "description": "PR workflow automation for DryRunSecurity users - creates commits, branches, and PRs following conventions, then polls for and addresses DryRunSecurity review comments.",
+      "version": "1.0.1",
+      "author": {
+        "name": "DryRunSecurity"
+      },
+      "category": "workflow",
+      "tags": ["git", "pr", "pull-request", "commit", "review", "dryrunsecurity", "automation"]
     }
   ]
 }

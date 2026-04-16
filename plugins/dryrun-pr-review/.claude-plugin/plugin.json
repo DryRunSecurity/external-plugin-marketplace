@@ -1,0 +1,9 @@
+{
+  "name": "dryrun-pr-review",
+  "description": "PR workflow automation for DryRunSecurity users - creates commits, branches, and PRs following conventions, then polls for and addresses DryRunSecurity review comments.",
+  "version": "1.0.0",
+  "author": {
+    "name": "DryRunSecurity"
+  },
+  "keywords": ["git", "pr", "pull-request", "commit", "review", "dryrunsecurity", "automation"]
+}
