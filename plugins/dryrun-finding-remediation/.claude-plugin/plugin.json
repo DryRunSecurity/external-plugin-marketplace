@@ -1,0 +1,9 @@
+{
+  "name": "dryrun-finding-remediation",
+  "description": "Pull DryRunSecurity findings via API and remediate them on a fresh branch with a new PR. Supports PR scan findings, deepscan code findings, and SCA advisory findings.",
+  "version": "1.0.0",
+  "author": {
+    "name": "DryRunSecurity"
+  },
+  "keywords": ["security", "remediation", "findings", "sca", "deepscan", "dryrunsecurity", "api"]
+}
