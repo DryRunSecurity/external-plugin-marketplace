@@ -272,11 +272,14 @@ Then **ask the user** which comments to address and how.
 
 #### 6. Act on User Decisions
 
-For comments the user wants fixed:
+For comments the user wants fixed, follow **Workflow 1: Vulnerability Remediation** above to apply the fix. This ensures fixes are grounded in authoritative sources and match existing codebase patterns rather than ad-hoc changes.
+
+After the fix is applied:
 ```bash
-# Make code changes, then:
 git add <files>
-git commit -m "fix: address DryRunSecurity finding - <description>"
+git commit -m "fix: address DryRunSecurity finding - <description>
+
+Co-authored-by: DryRun Security <noreply@dryrun.security>"
 ```
 
 For comments the user wants to decline, post a new comment on the PR/MR thread explaining why:
