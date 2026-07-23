@@ -5,7 +5,7 @@
     "email": "support@dryrunsecurity.com"
   },
   "metadata": {
-    "description": "Official DryRunSecurity skills for AI coding assistants. Covers vulnerability remediation and the full PR/MR review workflow.",
+    "description": "Official DryRunSecurity skills for AI coding assistants. Covers vulnerability remediation, API-driven finding remediation, and the full PR/MR review workflow.",
     "version": "1.0.1"
   },
   "plugins": [
@@ -30,6 +30,17 @@
       },
       "category": "workflow",
       "tags": ["git", "pr", "pull-request", "commit", "review", "dryrunsecurity", "automation"]
+    },
+    {
+      "name": "dryrun-finding-remediation",
+      "source": "./plugins/dryrun-finding-remediation",
+      "description": "Pull DryRunSecurity findings via API and remediate them on a fresh branch with a new PR. Supports PR scan findings, deepscan code findings, and SCA advisory findings.",
+      "version": "1.0.0",
+      "author": {
+        "name": "DryRunSecurity"
+      },
+      "category": "security",
+      "tags": ["security", "remediation", "findings", "sca", "deepscan", "dryrunsecurity", "api"]
     }
   ]
 }
