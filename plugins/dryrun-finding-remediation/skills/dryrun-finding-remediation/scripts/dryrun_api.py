@@ -12,6 +12,7 @@ Commands:
     list-repos               List repositories for an account
     list-scans               List PR scans for a repository
     get-scan                 Get detailed PR scan results with findings
+    get-finding              Get complete finding details by UUID
     list-deepscans           List deepscans for a repo (auto-picks latest)
     get-deepscan-results     Get deepscan code findings
     get-sca-results          Get SCA findings for a deepscan
@@ -26,8 +27,45 @@ import sys
 import urllib.request
 import urllib.error
 import urllib.parse
+import uuid
 
 BASE_URL = "https://simple-api.dryrun.security"
+
+
+class NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def uuid_arg(value):
+    try:
+        normalized = str(uuid.UUID(value))
+        if normalized != value.lower():
+            raise ValueError
+        return normalized
+    except ValueError:
+        raise argparse.ArgumentTypeError("must be a UUID in hyphenated form")
+
+
+def get_base_url():
+    value = os.environ.get("DRYRUN_API_BASE_URL", BASE_URL)
+    try:
+        parts = urllib.parse.urlsplit(value)
+        if (parts.scheme != "https" or not parts.hostname
+                or parts.username is not None or parts.password is not None
+                or parts.path not in ("", "/")
+                or any(character in value for character in ("?", "#", "\\"))
+                or any(character.isspace() or ord(character) < 32 or ord(character) == 127
+                       for character in value)):
+            raise ValueError
+        parts.port
+    except ValueError:
+        print(json.dumps({
+            "error": "DRYRUN_API_BASE_URL must be an HTTPS origin without "
+                     "credentials, a path, query, or fragment."
+        }, indent=2))
+        sys.exit(1)
+    return value.rstrip("/")
 
 
 def get_api_key():
@@ -42,7 +80,7 @@ def get_api_key():
 
 
 def make_request(path, params=None):
-    url = BASE_URL + path
+    url = get_base_url() + path
     if params:
         query = urllib.parse.urlencode(params)
         url = url + "?" + query
@@ -54,7 +92,7 @@ def make_request(path, params=None):
     })
 
     try:
-        with urllib.request.urlopen(req) as response:
+        with urllib.request.build_opener(NoRedirect()).open(req, timeout=30) as response:
             body = response.read().decode("utf-8")
             return json.loads(body)
     except urllib.error.HTTPError as e:
@@ -65,17 +103,19 @@ def make_request(path, params=None):
             "url": url,
         }
         if e.code == 404:
-            error_msg["message"] = "Not found. Check that the account_id, repo_id, scan_id, or deepscan_id is correct."
+            error_msg["message"] = "Not found. Check the account and requested IDs, including finding_id, and any finding_type filter."
+        elif e.code == 409:
+            error_msg["message"] = "Finding ID is ambiguous. Supply --finding-type pullrequest, deepscan, or sca."
         try:
             error_msg["response_body"] = json.loads(body)
         except (json.JSONDecodeError, ValueError):
             error_msg["response_body"] = body
         print(json.dumps(error_msg, indent=2))
         sys.exit(1)
-    except urllib.error.URLError as e:
+    except (urllib.error.URLError, TimeoutError) as e:
         print(json.dumps({
             "error": "Connection error",
-            "message": str(e.reason),
+            "message": str(e.reason if isinstance(e, urllib.error.URLError) else e),
             "url": url,
         }, indent=2))
         sys.exit(1)
@@ -92,6 +132,13 @@ def build_pagination(args):
 
 def cmd_list_accounts(args):
     result = make_request("/v1/accounts")
+    print(json.dumps(result, indent=2))
+
+
+def cmd_get_finding(args):
+    params = {"finding_type": args.finding_type} if args.finding_type else None
+    path = "/v1/accounts/{}/findings/{}".format(args.account_id, args.finding_id)
+    result = make_request(path, params)
     print(json.dumps(result, indent=2))
 
 
@@ -204,6 +251,12 @@ def main():
 
     subparsers.add_parser("list-accounts", help="List accounts accessible by the API key")
 
+    p_finding = subparsers.add_parser("get-finding", help="Get complete finding details by UUID")
+    p_finding.add_argument("--account-id", required=True, type=uuid_arg, help="Account ID (UUID)")
+    p_finding.add_argument("--finding-id", required=True, type=uuid_arg, help="Finding ID (UUID)")
+    p_finding.add_argument("--finding-type", choices=("pullrequest", "deepscan", "sca"),
+                           help="Optional exact type filter to disambiguate an ID")
+
     p_repos = subparsers.add_parser("list-repos", help="List repositories for an account")
     p_repos.add_argument("--account-id", required=True, help="Account ID (UUID)")
     add_pagination_args(p_repos)
@@ -261,6 +314,7 @@ def main():
 
     commands = {
         "list-accounts": cmd_list_accounts,
+        "get-finding": cmd_get_finding,
         "list-repos": cmd_list_repos,
         "list-scans": cmd_list_scans,
         "get-scan": cmd_get_scan,
