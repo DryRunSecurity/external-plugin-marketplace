@@ -27,7 +27,7 @@ jobs:
       contents: read
       pull-requests: write
       issues: read
-    uses: DryRunSecurity/external-plugin-marketplace/.github/workflows/dryrun-comment-remediation.yml@petek/finding-id-skills
+    uses: DryRunSecurity/external-plugin-marketplace/.github/workflows/dryrun-comment-remediation.yml@96212166b894b2af7e51c133b244a9182f14d806
     with:
       pr_number: ${{ inputs.pr_number || '' }}
       comment_id: ${{ inputs.comment_id || '' }}

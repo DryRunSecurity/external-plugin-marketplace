@@ -30,7 +30,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
-    uses: DryRunSecurity/external-plugin-marketplace/.github/workflows/dryrun-findings-remediation.yml@petek/finding-id-skills
+    uses: DryRunSecurity/external-plugin-marketplace/.github/workflows/dryrun-findings-remediation.yml@96212166b894b2af7e51c133b244a9182f14d806
     with:
       finding_id: ${{ inputs.finding_id }}
       finding_ids: ${{ inputs.finding_ids }}

@@ -174,7 +174,7 @@ Both publish agent-written explanations of the original DryRun issue, exact chan
 ### Installation
 
 1. Copy the desired caller example into your repository's `.github/workflows/` directory **on the default branch**. This is required for automatic `issue_comment` events and for manual dispatch to be available. The comment caller listens to created/edited PR **timeline conversation comments**, not inline review comments.
-2. The examples temporarily reference `@petek/finding-id-skills` for [PR #12](https://github.com/DryRunSecurity/external-plugin-marketplace/pull/12) testing. Replace that ref with a reviewed release or full commit SHA containing these workflows when published; these examples do not assume availability on `main` or `v1`.
+2. The examples pin workflow commit `96212166b894b2af7e51c133b244a9182f14d806`. Keep an immutable, reviewed commit pin when updating; the examples do not depend on a development branch or assume a release tag exists.
 3. Create the caller repository secret `OPENAI_API_KEY`. The examples explicitly map it to the required `MODEL_API_KEY`; no secrets are implicitly inherited. **GitHub Free private repositories need repository secrets** because organization secrets are not available to them.
 4. For findings, also set repository secret `DRYRUN_API_KEY` and repository variable `DRYRUN_ACCOUNT_ID`, or supply the account UUID at dispatch. Allow GitHub Actions to create pull requests in repository settings; organization policy must also permit this. Do not bypass a policy that disables PR creation.
 5. Allow this public reusable workflow and its referenced actions in your Actions policy. Keep the caller permissions shown in the examples: the called jobs can reduce permissions, not elevate them ([GitHub reference](https://docs.github.com/en/actions/reference/workflows-and-actions/reusing-workflow-configurations)).
@@ -191,6 +191,8 @@ Shared inputs are passed under the calling job's `with`:
 | `model` | Empty | Resolves to `gpt-5.5` for OpenAI or `claude-sonnet-4-5` for Anthropic |
 | `base_url` | Empty | Native provider SDK endpoint; an explicit HTTPS override selects a compatible API/gateway |
 | `use_responses_api` | `true` | OpenAI Responses API; set `false` for Chat Completions-only gateways; ignored for Anthropic |
+
+With no `base_url` override, OpenAI uses `https://api.openai.com/v1` and Anthropic uses `https://api.anthropic.com`. There is no internal endpoint or credential fallback.
 
 **Comment inputs:** `pr_number` selects a PR for manual runs; `comment_id` is optional and defaults to the most recently updated verified DryRun comment on that PR. Automatic runs use the actual event's PR and comment instead.
 
