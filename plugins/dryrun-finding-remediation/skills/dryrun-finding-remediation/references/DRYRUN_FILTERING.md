@@ -1,6 +1,6 @@
 # What DryRunSecurity Flags (and What It Doesn't)
 
-DryRunSecurity focuses on **real, exploitable code vulnerabilities**. Understanding what it filters out helps you trust the findings and avoid over-fixing.
+This reference describes filtering for **code vulnerabilities**, not SCA findings. SCA findings cover dependency advisories and may require version upgrades. Historical findings describe the scanned source; verify whether the vulnerable behavior still exists on the chosen remediation base.
 
 ## What Gets Filtered OUT (Not Reported)
 
@@ -42,4 +42,4 @@ If DryRunSecurity flagged it, it passed rigorous filtering. The finding represen
 - Something that requires code changes to fix (not just version bumps)
 - A confirmed risk after multiple stages of validation
 
-**Trust the finding.** Your job is to fix it correctly, not to second-guess whether it's real.
+Use the finding's evidence to guide remediation, and verify its applicability on the chosen base. If the reported behavior is already fixed, explain the evidence rather than manufacturing a change.
