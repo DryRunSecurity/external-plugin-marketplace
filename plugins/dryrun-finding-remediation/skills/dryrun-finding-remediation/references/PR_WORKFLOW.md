@@ -20,17 +20,9 @@ All subsequent steps reference `PLATFORM`, `OWNER`, `REPO` (GitHub) or `PROJECT`
 
 ### 1. Branch
 
-If on `main`/`master`, create a new branch using the branch name the user chose in Step 4 of the main workflow. Otherwise use the existing feature branch.
+Use the fresh remediation branch and base agreed in Step 4 of the main skill. That branch must be prepared before editing. Verify it is still checked out; do not switch to the scanned branch or reuse an unrelated feature branch after changes have been made. Honor supplied branch/base choices rather than asking again.
 
-```bash
-git checkout -b <branch-name>
-```
-
-For deepscan findings, branch from the deepscan's scanned branch if it was set:
-```bash
-git checkout <deepscan-branch>
-git checkout -b <branch-name>
-```
+For proposal-only requests or when commits are forbidden, stop before this publication workflow: do not commit, push, or open a PR. Branching and any authorized edits are handled by the main skill.
 
 ### 2. Stage & Commit
 
