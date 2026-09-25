@@ -1,0 +1,35 @@
+name: Remediate DryRun PR comments
+
+on:
+  issue_comment:
+    types: [created, edited]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Same-repository PR number
+        required: true
+        type: string
+      comment_id:
+        description: DryRun timeline comment ID; blank selects the most recently updated verified comment
+        type: string
+
+permissions: {}
+
+jobs:
+  remediate:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request &&
+       github.event.comment.user.id == 142451713 &&
+       github.event.comment.user.login == 'dryrunsecurity[bot]' &&
+       github.event.comment.user.type == 'Bot')
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+    uses: DryRunSecurity/external-plugin-marketplace/.github/workflows/dryrun-comment-remediation.yml@96212166b894b2af7e51c133b244a9182f14d806
+    with:
+      pr_number: ${{ inputs.pr_number || '' }}
+      comment_id: ${{ inputs.comment_id || '' }}
+    secrets:
+      MODEL_API_KEY: ${{ secrets.OPENAI_API_KEY }}

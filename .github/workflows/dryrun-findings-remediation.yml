@@ -1,0 +1,156 @@
+name: DryRun findings remediation
+
+on:
+  workflow_call:
+    inputs:
+      finding_id:
+        description: One finding UUID; select exactly one of finding_id, finding_ids, or issue_number
+        type: string
+        default: ''
+      finding_ids:
+        description: Comma- or whitespace-separated finding UUIDs (up to 20 unique IDs)
+        type: string
+        default: ''
+      issue_number:
+        description: Issue with a DryRun finding IDs heading or risk-register finding links
+        type: string
+        default: ''
+      account_id:
+        description: DryRun account UUID
+        type: string
+        required: true
+      base_branch:
+        description: Remediation base branch; blank uses the caller repository default branch
+        type: string
+        default: ''
+      finding_type:
+        description: Optional exact type filter (pullrequest, deepscan, or sca)
+        type: string
+        default: ''
+      dryrun_api_base_url:
+        description: DryRun API endpoint
+        type: string
+        default: https://simple-api.dryrun.security
+      provider:
+        description: Model API provider (openai or anthropic)
+        type: string
+        default: openai
+      model:
+        description: Model name; blank uses gpt-5.5 or claude-sonnet-4-5 according to provider
+        type: string
+        default: ''
+      base_url:
+        description: HTTPS compatible API endpoint; blank uses the provider SDK default
+        type: string
+        default: ''
+      use_responses_api:
+        description: Use the Responses API for OpenAI; ignored for Anthropic
+        type: boolean
+        default: true
+    secrets:
+      MODEL_API_KEY:
+        description: API key for the explicitly selected provider and endpoint
+        required: true
+      DRYRUN_API_KEY:
+        description: DryRun API key authorized to read the selected account and findings
+        required: true
+
+permissions: {}
+
+concurrency:
+  group: dryrun-findings-remediation-${{ github.repository_id }}-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+    outputs:
+      ready: ${{ steps.prepare.outputs.ready }}
+      source_key: ${{ steps.prepare.outputs.source_key }}
+    env:
+      REMEDIATION_ROOT: ${{ github.workspace }}/dcode-findings
+      SKILLS_ROOT: ${{ github.workspace }}/implementation
+      INPUTS_JSON: ${{ toJSON(inputs) }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: DryRunSecurity/external-plugin-marketplace
+          ref: 73fc31261eddd535230fc8b0a418f1dcf7729f29
+          path: implementation
+          persist-credentials: false
+      - name: Test trusted runner without credentials
+        run: python3 -m unittest discover -s "$SKILLS_ROOT/.github/dcode-remediation" -p 'test_*.py' -v
+      - name: Fetch selected findings and immutable source
+        id: prepare
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DRYRUN_API_KEY: ${{ secrets.DRYRUN_API_KEY }}
+          DRYRUN_API_BASE_URL: ${{ inputs.dryrun_api_base_url }}
+        run: python3 "$SKILLS_ROOT/.github/dcode-remediation/runner.py" prepare-findings --root "$REMEDIATION_ROOT"
+      - name: Build isolated pinned dcode runner
+        if: steps.prepare.outputs.ready == 'true'
+        run: docker build --tag dcode-remediation:0.1.66 "$SKILLS_ROOT/.github/dcode-remediation"
+      - name: Generate edits without GitHub or DryRun credentials
+        if: steps.prepare.outputs.ready == 'true'
+        env:
+          MODEL_API_KEY: ${{ secrets.MODEL_API_KEY }}
+        run: python3 "$SKILLS_ROOT/.github/dcode-remediation/runner.py" run-agent --root "$REMEDIATION_ROOT"
+      - name: Complete npm lockfile without credentials or repository code
+        if: steps.prepare.outputs.ready == 'true'
+        run: python3 "$SKILLS_ROOT/.github/dcode-remediation/runner.py" complete-npm --root "$REMEDIATION_ROOT"
+      - name: Validate and package actual edits and explanations
+        if: steps.prepare.outputs.ready == 'true'
+        run: python3 "$SKILLS_ROOT/.github/dcode-remediation/runner.py" bundle --root "$REMEDIATION_ROOT"
+      - name: Retain agent diagnostics on failure
+        if: failure() && steps.prepare.outputs.ready == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: dryrun-findings-failure-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ env.REMEDIATION_ROOT }}/agent-output.txt
+          if-no-files-found: ignore
+          retention-days: 7
+      - uses: actions/upload-artifact@v7
+        if: steps.prepare.outputs.ready == 'true'
+        with:
+          name: dryrun-findings-proposal-${{ github.run_id }}
+          path: ${{ env.REMEDIATION_ROOT }}/artifact/
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 7
+
+  publish:
+    needs: propose
+    if: needs.propose.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    concurrency:
+      group: dryrun-findings-publish-${{ github.repository_id }}-${{ needs.propose.outputs.source_key }}
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    env:
+      REMEDIATION_ROOT: ${{ github.workspace }}/proposal
+      SKILLS_ROOT: ${{ github.workspace }}/implementation
+      INPUTS_JSON: ${{ toJSON(inputs) }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: DryRunSecurity/external-plugin-marketplace
+          ref: 73fc31261eddd535230fc8b0a418f1dcf7729f29
+          path: implementation
+          persist-credentials: false
+      - uses: actions/download-artifact@v8
+        with:
+          name: dryrun-findings-proposal-${{ github.run_id }}
+          path: ${{ env.REMEDIATION_ROOT }}
+      - name: Recheck base and open or reuse one combined remediation PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 "$SKILLS_ROOT/.github/dcode-remediation/runner.py" publish-findings --root "$REMEDIATION_ROOT"

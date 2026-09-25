@@ -1,0 +1,43 @@
+name: Remediate DryRun findings
+
+on:
+  workflow_dispatch:
+    inputs:
+      finding_id:
+        description: One finding UUID; select exactly one of finding_id, finding_ids, or issue_number
+        type: string
+      finding_ids:
+        description: Comma- or whitespace-separated finding UUIDs (up to 20 unique IDs)
+        type: string
+      issue_number:
+        description: Issue with a DryRun finding IDs heading or risk-register finding links
+        type: string
+      account_id:
+        description: DryRun account UUID; blank uses repository variable DRYRUN_ACCOUNT_ID
+        type: string
+      base_branch:
+        description: Remediation base branch; blank uses the repository default branch
+        type: string
+      finding_type:
+        description: Optional exact type filter (pullrequest, deepscan, or sca)
+        type: string
+
+permissions: {}
+
+jobs:
+  remediate:
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    uses: DryRunSecurity/external-plugin-marketplace/.github/workflows/dryrun-findings-remediation.yml@96212166b894b2af7e51c133b244a9182f14d806
+    with:
+      finding_id: ${{ inputs.finding_id }}
+      finding_ids: ${{ inputs.finding_ids }}
+      issue_number: ${{ inputs.issue_number }}
+      account_id: ${{ inputs.account_id || vars.DRYRUN_ACCOUNT_ID }}
+      base_branch: ${{ inputs.base_branch }}
+      finding_type: ${{ inputs.finding_type }}
+    secrets:
+      MODEL_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      DRYRUN_API_KEY: ${{ secrets.DRYRUN_API_KEY }}
