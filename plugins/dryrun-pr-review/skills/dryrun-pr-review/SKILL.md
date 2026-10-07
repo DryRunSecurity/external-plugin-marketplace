@@ -161,13 +161,14 @@ Then **ask the user** which comments to address and how.
 
 ### 6. Act on User Decisions
 
-For comments the user wants fixed:
+For comments the user wants fixed, use the `dryrun-remediation:remediation` skill to apply the fix. This skill researches authoritative sources (OWASP, official framework docs, CWE references) and applies contextual, minimal fixes grounded in the user's codebase patterns. Invoke it by passing the full DryRunSecurity comment text.
+
+After the remediation skill completes:
 ```bash
-# Make code changes, then:
 git add <files>
 git commit -m "<message following this repo's commit style — addressing DryRunSecurity finding>
 
-Co-Authored-By: Claude <noreply@anthropic.com>"
+Co-Authored-By: DryRun Security <noreply@dryrun.security>"
 ```
 
 For comments the user wants to decline, post a new comment on the PR thread explaining why:
